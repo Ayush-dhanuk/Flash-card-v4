@@ -1,5 +1,7 @@
 const GEMINI_API_KEY = 'AQ.Ab8RN6KgSFiOHSsjC6fvPw2t_DI-1MNlu8U0FFHVfFd95G7JHA';
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+// Updated model endpoint
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 export const importCardsBatch = async (inputText, chapterName = 'General') => {
   if (!inputText || !inputText.trim()) {
@@ -73,4 +75,4 @@ Return a JSON array where each object has keys "term" (Korean word) and "meaning
     throw error;
   }
 };
-  
+    
