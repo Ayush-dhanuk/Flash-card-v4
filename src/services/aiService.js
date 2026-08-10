@@ -1,6 +1,6 @@
 // Replace with your actual Gemini API Key from https://aistudio.google.com/
 const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${AQ.Ab8RN6LlOtEHe3Gdvt4LgCn10KmKSTr5YcrRIg95sq9KrsV0oA}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${'AQ.Ab8RN6LlOtEHe3Gdvt4LgCn10KmKSTr5YcrRIg95sq9KrsV0oA'}`;
 
 export const importCardsBatch = async (inputText, chapterName = 'General') => {
   if (!inputText || !inputText.trim()) {
