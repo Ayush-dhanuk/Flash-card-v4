@@ -3,6 +3,7 @@
     "name": "Flash card v2",
     "slug": "Flash-card-v2",
     "version": "1.0.0",
+    "owner": "ayushdhanuks-team",
     "orientation": "portrait",
     "android": {
       "package": "com.anonymous.flashcardv2",
