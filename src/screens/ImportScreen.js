@@ -1,145 +1,169 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import CustomModal from '../components/CustomModal';
+import { importCardsBatch } from '../services/aiService';
 
-export default function ImportScreen({ cards, setCards, navigation, isDarkMode }) {
-  const [chapter, setChapter] = useState('Chapter 1');
+export default function ImportScreen({ onSaveCards, isDarkMode = true }) {
+  const [chapter, setChapter] = useState('');
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [modalConfig, setModalConfig] = useState({ visible: false, title: '', message: '', type: 'success' });
 
-  const handleBulkAiTranslateAndSave = async () => {
+  const handleImport = async () => {
     if (!inputText.trim()) {
-      setModalConfig({
-        visible: true,
-        title: 'Empty Input',
-        message: 'Please paste words or lines to import.',
-        type: 'danger',
-      });
+      Alert.alert('Empty Input', 'Please paste or type words to import.');
       return;
     }
 
-    const lines = inputText.split('\n').filter((l) => l.trim().length > 0);
-    const targetChapter = chapter.trim() || 'General';
+    Keyboard.dismiss();
     setLoading(true);
 
-    const newCards = [];
-
-    for (let line of lines) {
-      const parts = line.split(',').map((p) => p.trim());
-      const term = parts[0];
-      let meaning = parts[1] || '';
-
-      if (!meaning && term) {
-        try {
-          const res = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(term)}&langpair=autodetect|ne`
-          );
-          const data = await res.json();
-          if (data && data.responseData && data.responseData.translatedText) {
-            meaning = data.responseData.translatedText;
-          }
-        } catch (e) {
-          meaning = '—';
-        }
+    try {
+      const newCards = await importCardsBatch(inputText, chapter);
+      if (onSaveCards) {
+        onSaveCards(newCards);
       }
-
-      if (term) {
-        newCards.push({
-          id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
-          term,
-          meaning: meaning || '—',
-          chapter: targetChapter,
-          score: 0,
-        });
-      }
-    }
-
-    setLoading(false);
-    if (newCards.length > 0) {
-      setCards([...cards, ...newCards]);
+      Alert.alert('Success', `Imported ${newCards.length} flashcards successfully!`);
       setInputText('');
-      setModalConfig({
-        visible: true,
-        title: 'Success!',
-        message: `Added ${newCards.length} flashcards with Nepali translation.`,
-        type: 'success',
-      });
+      setChapter('');
+    } catch (error) {
+      Alert.alert('Import Failed', error.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const themeBg = isDarkMode ? '#000000' : '#F8FAFC';
-  const themeCard = isDarkMode ? '#121212' : '#FFF';
-  const themeText = isDarkMode ? '#FFFFFF' : '#1E293B';
-  const themeInput = isDarkMode ? '#18181B' : '#F8FAFC';
-  const themeBorder = isDarkMode ? '#27272A' : '#E2E8F0';
+  const isDark = isDarkMode;
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: themeBg }]} contentContainerStyle={{ paddingBottom: 30 }}>
-      <Text style={[styles.headerTitle, { color: themeText }]}>📥 Bulk Import & AI Translate</Text>
-
-      <Text style={[styles.label, { color: themeText }]}>Chapter / Deck Name:</Text>
-      <TextInput
-        style={[styles.inpSingle, { backgroundColor: themeInput, color: themeText, borderColor: themeBorder }]}
-        placeholder="e.g. Chapter 1: Basics"
-        placeholderTextColor="#71717A"
-        value={chapter}
-        onChangeText={setChapter}
-      />
-
-      <View style={[styles.sectionCard, { backgroundColor: themeCard, borderColor: themeBorder }]}>
-        <Text style={[styles.sectionTitle, { color: themeText }]}>Paste Multiple Words / Sentences</Text>
-        <Text style={[styles.subLabel, isDarkMode && { color: '#A1A1AA' }]}>
-          Paste one per line. If meaning is missing, AI will auto-fill in **Nepali**!
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView
+        contentContainerStyle={[styles.container, isDark ? styles.bgDark : styles.bgLight]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+          Bulk Import Flashcards
+        </Text>
+        <Text style={[styles.subtitle, { color: isDark ? '#A1A1AA' : '#64748B' }]}>
+          Enter words line-by-line. AI will translate Korean words to Nepali automatically, or you can supply pre-separated pairs (e.g. "사과, स्याउ").
         </Text>
 
+        {/* Chapter Name Input */}
+        <Text style={[styles.label, { color: isDark ? '#818CF8' : '#4F46E5' }]}>
+          CHAPTER / CATEGORY NAME
+        </Text>
         <TextInput
-          style={[styles.inpMulti, { backgroundColor: themeInput, color: themeText, borderColor: themeBorder }]}
+          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+          placeholder="e.g. Chapter 1, Food, Verbs..."
+          placeholderTextColor={isDark ? '#52525B' : '#94A3B8'}
+          value={chapter}
+          onChangeText={setChapter}
+        />
+
+        {/* Bulk Word Input */}
+        <Text style={[styles.label, { color: isDark ? '#818CF8' : '#4F46E5' }]}>
+          WORDS LIST (ONE PER LINE)
+        </Text>
+        <TextInput
+          style={[styles.input, styles.textArea, isDark ? styles.inputDark : styles.inputLight]}
+          placeholder={`의사\n아버지\n안녕하세요\n사과, स्या우`}
+          placeholderTextColor={isDark ? '#52525B' : '#94A3B8'}
           multiline
-          numberOfLines={8}
-          placeholder={`Example 1 (Auto-Translate):\nHello\nTree\n\nExample 2 (Manual):\nBook, किताब`}
-          placeholderTextColor="#71717A"
+          numberOfLines={10}
+          textAlignVertical="top"
           value={inputText}
           onChangeText={setInputText}
         />
 
-        <TouchableOpacity style={styles.priBtn} onPress={handleBulkAiTranslateAndSave} disabled={loading}>
+        {/* Import Action Button */}
+        <TouchableOpacity
+          style={[styles.importBtn, loading && styles.importBtnDisabled]}
+          onPress={handleImport}
+          disabled={loading}
+        >
           {loading ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <View style={styles.btnRow}>
+              <ActivityIndicator color="#FFF" size="small" />
+              <Text style={styles.importBtnTxt}>Translating & Batching...</Text>
+            </View>
           ) : (
-            <>
-              <Ionicons name="sparkles-outline" size={20} color="#FFF" />
-              <Text style={styles.priBtnTxt}>Auto-Translate & Save Cards</Text>
-            </>
+            <View style={styles.btnRow}>
+              <Ionicons name="cloud-upload-outline" size={20} color="#FFF" />
+              <Text style={styles.importBtnTxt}>Import Words</Text>
+            </View>
           )}
         </TouchableOpacity>
-      </View>
-
-      <CustomModal
-        visible={modalConfig.visible}
-        title={modalConfig.title}
-        message={modalConfig.message}
-        type={modalConfig.type}
-        isDarkMode={isDarkMode}
-        onClose={() => {
-          setModalConfig({ ...modalConfig, visible: false });
-          if (modalConfig.type === 'success') navigation.navigate('Study');
-        }}
-      />
-    </ScrollView>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  subLabel: { fontSize: 12, color: '#64748B', marginBottom: 10, lineHeight: 18 },
-  sectionCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  inpSingle: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, fontSize: 15, marginBottom: 14 },
-  inpMulti: { borderRadius: 12, padding: 14, borderWidth: 1, fontSize: 15, textAlignVertical: 'top', height: 160, marginBottom: 14 },
-  priBtn: { backgroundColor: '#4F46E5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12 },
-  priBtnTxt: { color: '#FFF', fontWeight: '700', fontSize: 15, marginLeft: 8 },
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  bgDark: { backgroundColor: '#000000' },
+  bgLight: { backgroundColor: '#F8FAFC' },
+
+  title: { fontSize: 24, fontWeight: '800', marginBottom: 6 },
+  subtitle: { fontSize: 13, lineHeight: 18, marginBottom: 20 },
+
+  label: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
+  input: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  inputDark: {
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
+    color: '#FFFFFF',
+  },
+  inputLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    color: '#0F172A',
+  },
+  textArea: {
+    height: 180,
+  },
+
+  importBtn: {
+    backgroundColor: '#6366F1',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  importBtnDisabled: {
+    backgroundColor: '#4338CA',
+    opacity: 0.8,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  importBtnTxt: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
 });
+          
