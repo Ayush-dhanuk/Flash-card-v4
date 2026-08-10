@@ -1,25 +1,12 @@
 {
   "expo": {
-    "name": "FlashCards AI",
-    "slug": "ayush",
+    "name": "Flash card v2",
+    "slug": "Flash-card-v2",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "",
-    "userInterfaceStyle": "light",
-    "owner": "ayushdhanuks-team",
-    "splash": {
-      "image": "",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "android": {
-      "package": "com.anonymous.flashcardsai"
-    },
     "extra": {
       "eas": {
-        "projectId": "7160b8c8-9e11-4271-b63c-e3c6376eaf23"
+        "projectId": "1f3a7e7e-2b9d-4f2e-a9ea-2cd54906c61f"
       }
     }
   }
 }
-
