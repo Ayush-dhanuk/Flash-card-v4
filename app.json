@@ -1,1 +1,25 @@
+{
+  "expo": {
+    "name": "FlashCards AI",
+    "slug": "ayush",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "",
+    "userInterfaceStyle": "light",
+    "owner": "ayushdhanuks-team",
+    "splash": {
+      "image": "",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "android": {
+      "package": "com.anonymous.flashcardsai"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7160b8c8-9e11-4271-b63c-e3c6376eaf23"
+      }
+    }
+  }
+}
 
