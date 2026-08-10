@@ -3,6 +3,13 @@
     "name": "Flash card v2",
     "slug": "Flash-card-v2",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "android": {
+      "package": "com.anonymous.flashcardv2",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF"
+      }
+    },
     "extra": {
       "eas": {
         "projectId": "1f3a7e7e-2b9d-4f2e-a9ea-2cd54906c61f"
