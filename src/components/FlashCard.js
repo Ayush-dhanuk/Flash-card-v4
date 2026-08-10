@@ -5,20 +5,20 @@ import * as Speech from 'expo-speech';
 
 const { width, height } = Dimensions.get('window');
 
-// Natural, conversational sentence mappings
-const NATURAL_SENTENCES = {
-  '의사': { ko: '병원에 가서 의사 선생님을 만났어요.', ne: 'म अस्पताल गएर डाक्टरलाई भेटेँ।' },
-  '아버지': { ko: '우리 아버지는 정말 친절하세요.', ne: 'मेरो बुबा धेरै दयालु हुनुहुन्छ।' },
-  '안녕하세요': { ko: '안녕하세요, 오늘 날씨가 참 좋네요!', ne: 'नमस्ते, आज मौसम धेरै राम्रो छ!' },
-  '감사합니다': { ko: '도와주셔서 정말 감사합니다.', ne: 'सहयोगको लागि धेरै धेरै धन्यवाद।' },
-  '나무': { ko: '정원에 큰 나무가 한 그루 있어요.', ne: 'बागीचामा एउटा ठूलो रुख छ।' },
-  '책': { ko: '도서관에서 재미있는 책을 읽고 있어요.', ne: 'म पुस्तकालयमा एउटा राम्रो किताब पढ्दैछु।' },
-  '물': { ko: '목이 말라서 시원한 물을 마셨어요.', ne: 'तिर्खा लागेर म चिसो पानी पिएँ।' },
-  '집': { ko: '오늘 저녁에는 일찍 집에 갈 거예요.', ne: 'आज साँझ म छिटै घर जानेछु।' },
-  '학교': { ko: '내일 아침에 같이 학교에 갈까요?', ne: 'भोलि बिहान सँगै स्कूल जाने हो?' },
-  '사과': { ko: '아침에 먹는 사과는 몸에 좋아요.', ne: 'बिहान स्याउ खानु स्वास्थ्यको लागि राम्रो हुन्छ।' },
-  '친구': { ko: '주말에 오랜만에 친구를 만났어요.', ne: 'वीकेन्डमा धेरै पछि साथीलाई भेटेँ।' },
-  '음식': { ko: '이 식당은 한국 음식이 맛있어요.', ne: 'यो रेस्टुरेन्टमा कोरियन खाना मीठो छ।' },
+// Short, simple, everyday sentences (3-4 words max)
+const SIMPLE_NATURAL_SENTENCES = {
+  '의사': { ko: '저는 의사예요.', ne: 'म डाक्टर हुँ।' },
+  '아버지': { ko: '아버지를 사랑해요.', ne: 'म बुबालाई माया गर्छु।' },
+  '안녕하세요': { ko: '안녕하세요, 반가워요.', ne: 'नमस्ते, भेटेर खुसी लाग्यो।' },
+  '감사합니다': { ko: '정말 감사합니다.', ne: 'धेरै धेरै धन्यवाद।' },
+  '나무': { ko: '나무가 매우 커요.', ne: 'रुख धेरै ठूलो छ।' },
+  '책': { ko: '책을 읽어요.', ne: 'किताब पढ्छु।' },
+  '물': { ko: '물을 마셔요.', ne: 'पानी पिउँछु।' },
+  '집': { ko: '지금 집에 가요.', ne: 'अहिले घर जान्छु।' },
+  '학교': { ko: '학교에 가요.', ne: 'स्कूल जान्छु।' },
+  '사과': { ko: '사과를 먹어요.', ne: 'स्याउ खान्छु।' },
+  '친구': { ko: '친구를 만나요.', ne: 'साथीलाई भेट्छु।' },
+  '음식': { ko: '음식이 맛있어요.', ne: 'खाना मीठो छ।' },
 };
 
 export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
@@ -27,20 +27,19 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
 
   const flipAnim = useRef(new Animated.Value(0)).current;
 
-  // Natural example sentence selector & dynamic natural fallback generator
+  // Select simple sentence or use a lightweight 3-word dynamic template
   const exampleSentence = useMemo(() => {
     if (!card?.term) return null;
     const cleanTerm = card.term.trim();
 
-    if (NATURAL_SENTENCES[cleanTerm]) {
-      return NATURAL_SENTENCES[cleanTerm];
+    if (SIMPLE_NATURAL_SENTENCES[cleanTerm]) {
+      return SIMPLE_NATURAL_SENTENCES[cleanTerm];
     }
 
-    // Natural fallback context instead of "이것은 X입니다"
-    const isObjectOrConcept = true;
+    // Ultra-simple dynamic fallback for custom imported words
     return {
-      ko: `저는 ${cleanTerm}(을/를) 자주 공부해요.`,
-      ne: `म ${card.meaning || 'यो शब्द'} नियमित रूपमा अभ्यास गर्छु।`,
+      ko: `${cleanTerm}(이/가) 좋아요.`,
+      ne: `${card.meaning || 'यो'} राम्रो छ।`,
     };
   }, [card]);
 
@@ -136,7 +135,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
             </TouchableOpacity>
           </View>
 
-          {/* NATURAL EXAMPLE SENTENCE BOX */}
+          {/* SIMPLE EXAMPLE SENTENCE BOX */}
           {exampleSentence && (
             <View style={[styles.exampleContainer, isDarkMode ? styles.exampleBoxDark : styles.exampleBoxLight]}>
               <Text style={[styles.exampleHeader, isDarkMode && { color: '#818CF8' }]}>EXAMPLE SENTENCE</Text>
@@ -184,7 +183,7 @@ const styles = StyleSheet.create({
   exampleBoxLight: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
   exampleBoxDark: { backgroundColor: '#18181B', borderColor: '#27272A' },
   exampleHeader: { fontSize: 10, fontWeight: '800', color: '#4F46E5', letterSpacing: 1, marginBottom: 6 },
-  exampleLine: { fontSize: 14, lineHeight: 20 },
+  exampleLine: { fontSize: 15, lineHeight: 22 },
   boldTag: { fontWeight: '700', color: '#6366F1' },
 
   flipHint: { fontSize: 12, color: '#94A3B8' },
