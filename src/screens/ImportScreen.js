@@ -2,157 +2,107 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function ImportScreen({ cards, setCards, navigation }) {
+export default function ImportScreen({ cards, setCards, navigation, isDarkMode }) {
   const [chapter, setChapter] = useState('Chapter 1');
-  const [singleTerm, setSingleTerm] = useState('');
-  const [singleMeaning, setSingleMeaning] = useState('');
-  const [bulkText, setBulkText] = useState('');
-  const [translating, setTranslating] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Auto-translate single term via free Translation API
-  const handleAutoTranslate = async () => {
-    if (!singleTerm.trim()) {
-      Alert.alert('Empty Term', 'Please enter a word or term to auto-translate.');
+  // Auto-translate batch items to Nepali via free Translation API
+  const handleBulkAiTranslateAndSave = async () => {
+    if (!inputText.trim()) {
+      Alert.alert('Empty Input', 'Please paste words or lines to import.');
       return;
     }
 
-    setTranslating(true);
-    try {
-      const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(singleTerm)}&langpair=autodetect|en`
-      );
-      const data = await response.json();
-      
-      if (data && data.responseData && data.responseData.translatedText) {
-        setSingleMeaning(data.responseData.translatedText);
-      } else {
-        Alert.alert('Translation Failed', 'Could not translate automatically.');
-      }
-    } catch (e) {
-      Alert.alert('Error', 'Network error during translation.');
-    } finally {
-      setTranslating(false);
-    }
-  };
-
-  const handleAddSingleCard = () => {
-    if (!singleTerm.trim() || !singleMeaning.trim()) {
-      Alert.alert('Incomplete', 'Please fill in both term and meaning.');
-      return;
-    }
-
-    const newCard = {
-      id: Date.now().toString(),
-      term: singleTerm.trim(),
-      meaning: singleMeaning.trim(),
-      chapter: chapter.trim() || 'General',
-      score: 0,
-    };
-
-    setCards([...cards, newCard]);
-    setSingleTerm('');
-    setSingleMeaning('');
-    Alert.alert('Success', 'Card added successfully!');
-    navigation.navigate('Study');
-  };
-
-  const handleBulkImport = () => {
-    if (!bulkText.trim()) return;
+    const lines = inputText.split('\n').filter((l) => l.trim().length > 0);
     const targetChapter = chapter.trim() || 'General';
+    setLoading(true);
+
     const newCards = [];
 
-    bulkText.split('\n').forEach((line) => {
+    for (let line of lines) {
       const parts = line.split(',').map((p) => p.trim());
-      if (parts.length >= 2 && parts[0] && parts[1]) {
+      const term = parts[0];
+      let meaning = parts[1] || '';
+
+      // If meaning is missing, auto-translate to Nepali
+      if (!meaning && term) {
+        try {
+          const res = await fetch(
+            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(term)}&langpair=autodetect|ne`
+          );
+          const data = await res.json();
+          if (data && data.responseData && data.responseData.translatedText) {
+            meaning = data.responseData.translatedText;
+          }
+        } catch (e) {
+          meaning = '—';
+        }
+      }
+
+      if (term) {
         newCards.push({
           id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
-          term: parts[0],
-          meaning: parts[1],
+          term,
+          meaning: meaning || '—',
           chapter: targetChapter,
           score: 0,
         });
       }
-    });
+    }
 
+    setLoading(false);
     if (newCards.length > 0) {
       setCards([...cards, ...newCards]);
-      setBulkText('');
-      Alert.alert('Success', `Added ${newCards.length} cards to "${targetChapter}".`);
+      setInputText('');
+      Alert.alert('Success', `Added ${newCards.length} cards with Nepali translation.`);
       navigation.navigate('Study');
-    } else {
-      Alert.alert('Import Failed', 'Format each line as: Term, Meaning');
     }
   };
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
-      <Text style={styles.headerTitle}>📥 Add / Import Cards</Text>
+  const themeBg = isDarkMode ? '#0F172A' : '#F8FAFC';
+  const themeCard = isDarkMode ? '#1E293B' : '#FFF';
+  const themeText = isDarkMode ? '#F8FAFC' : '#1E293B';
+  const themeInput = isDarkMode ? '#334155' : '#F8FAFC';
 
-      <Text style={styles.label}>Chapter / Deck Name:</Text>
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: themeBg }]} contentContainerStyle={{ paddingBottom: 30 }}>
+      <Text style={[styles.headerTitle, { color: themeText }]}>📥 Bulk Import & AI Translate</Text>
+
+      <Text style={[styles.label, { color: themeText }]}>Chapter / Deck Name:</Text>
       <TextInput
-        style={styles.inpSingle}
+        style={[styles.inpSingle, { backgroundColor: themeInput, color: themeText, borderColor: isDarkMode ? '#475569' : '#CBD5E1' }]}
         placeholder="e.g. Chapter 1: Basics"
+        placeholderTextColor="#94A3B8"
         value={chapter}
         onChangeText={setChapter}
       />
 
-      {/* SINGLE CARD ADD WITH AUTO TRANSLATE */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Add Single Card (Auto-Translate)</Text>
-        
-        <Text style={styles.subLabel}>Term / Word:</Text>
+      <View style={[styles.sectionCard, { backgroundColor: themeCard, borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]}>
+        <Text style={[styles.sectionTitle, { color: themeText }]}>Paste Multiple Words / Sentences</Text>
+        <Text style={styles.subLabel}>
+          Paste one per line. If meaning is missing, AI will auto-fill in **Nepali**!
+        </Text>
+
         <TextInput
-          style={styles.inpSingle}
-          placeholder="Enter term (e.g., 안녕하세요)"
-          value={singleTerm}
-          onChangeText={setSingleTerm}
+          style={[styles.inpMulti, { backgroundColor: themeInput, color: themeText, borderColor: isDarkMode ? '#475569' : '#CBD5E1' }]}
+          multiline
+          numberOfLines={8}
+          placeholder={`Example 1 (Auto-Translate):\nHello\nTree\nApple\n\nExample 2 (Manual):\nBook, किताब`}
+          placeholderTextColor="#94A3B8"
+          value={inputText}
+          onChangeText={setInputText}
         />
 
-        <TouchableOpacity
-          style={styles.autoTranslateBtn}
-          onPress={handleAutoTranslate}
-          disabled={translating}
-        >
-          {translating ? (
-            <ActivityIndicator size="small" color="#4F46E5" />
+        <TouchableOpacity style={styles.priBtn} onPress={handleBulkAiTranslateAndSave} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFF" />
           ) : (
             <>
-              <Ionicons name="sparkles-outline" size={16} color="#4F46E5" />
-              <Text style={styles.autoTranslateTxt}>Auto-Fill Meaning with AI</Text>
+              <Ionicons name="sparkles-outline" size={20} color="#FFF" />
+              <Text style={styles.priBtnTxt}>Auto-Translate & Save Cards</Text>
             </>
           )}
-        </TouchableOpacity>
-
-        <Text style={styles.subLabel}>Meaning:</Text>
-        <TextInput
-          style={styles.inpSingle}
-          placeholder="Enter meaning (or auto-fill)"
-          value={singleMeaning}
-          onChangeText={setSingleMeaning}
-        />
-
-        <TouchableOpacity style={styles.priBtn} onPress={handleAddSingleCard}>
-          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
-          <Text style={styles.priBtnTxt}>Add Card</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* BULK IMPORT */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Bulk CSV Import</Text>
-        <Text style={styles.subLabel}>Paste lines (Term, Meaning):</Text>
-        <TextInput
-          style={styles.inpMulti}
-          multiline
-          numberOfLines={6}
-          placeholder={`안녕하세요, Hello\n감사합니다, Thank You`}
-          value={bulkText}
-          onChangeText={setBulkText}
-        />
-
-        <TouchableOpacity style={styles.priBtn} onPress={handleBulkImport}>
-          <Ionicons name="cloud-upload-outline" size={20} color="#FFF" />
-          <Text style={styles.priBtnTxt}>Bulk Save Cards</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -160,17 +110,15 @@ export default function ImportScreen({ cards, setCards, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC', padding: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#1E293B', textAlign: 'center', marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: '700', color: '#334155', marginBottom: 6 },
-  subLabel: { fontSize: 12, fontWeight: '600', color: '#64748B', marginTop: 8, marginBottom: 4 },
-  sectionCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 14 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
-  inpSingle: { backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: '#CBD5E1', fontSize: 15 },
-  inpMulti: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#CBD5E1', fontSize: 15, textAlignVertical: 'top', height: 120, marginBottom: 12 },
-  autoTranslateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEF2FF', paddingVertical: 8, borderRadius: 10, marginVertical: 8 },
-  autoTranslateTxt: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 13 },
-  priBtn: { backgroundColor: '#4F46E5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, marginTop: 8 },
-  priBtnTxt: { color: '#FFF', fontWeight: '700', fontSize: 15, marginLeft: 6 },
+  container: { flex: 1, padding: 16 },
+  headerTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  subLabel: { fontSize: 12, color: '#64748B', marginBottom: 10, lineHeight: 18 },
+  sectionCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  inpSingle: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, fontSize: 15, marginBottom: 14 },
+  inpMulti: { borderRadius: 12, padding: 14, borderWidth: 1, fontSize: 15, textAlignVertical: 'top', height: 160, marginBottom: 14 },
+  priBtn: { backgroundColor: '#4F46E5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12 },
+  priBtnTxt: { color: '#FFF', fontWeight: '700', fontSize: 15, marginLeft: 8 },
 });
           
