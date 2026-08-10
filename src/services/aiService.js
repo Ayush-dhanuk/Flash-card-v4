@@ -1,62 +1,151 @@
-// src/services/aiService.js - Free translation backup (No API Key Required)
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+} from 'react-native';
+import { importCardsBatch } from '../services/aiService';
 
-export const importCardsBatch = async (inputText, chapterName = 'General') => {
-  if (!inputText || !inputText.trim()) {
-    throw new Error('Please enter some text to import.');
-  }
+export default function ImportScreen({ navigation, route }) {
+  const [inputText, setInputText] = useState('');
+  const [chapterName, setChapterName] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const lines = inputText.split('\n').filter((l) => l.trim().length > 0);
-  const wordsToTranslate = [];
-  const manualCards = [];
-
-  // 1. Separate manual pairs (e.g. "사과, स्याउ") from single words
-  lines.forEach((line) => {
-    const parts = line.split(/[,,\t=]/).map((p) => p.trim());
-    if (parts.length >= 2 && parts[1]) {
-      manualCards.push({
-        id: `${Date.now()}-${Math.random()}`,
-        term: parts[0],
-        meaning: parts[1],
-        chapter: chapterName.trim() || 'General',
-      });
-    } else {
-      wordsToTranslate.push(parts[0]);
+  const handleImport = async () => {
+    if (!inputText.trim()) {
+      Alert.alert('Error', 'Please enter some words to import.');
+      return;
     }
-  });
 
-  if (wordsToTranslate.length === 0) {
-    return manualCards;
-  }
+    setLoading(true);
 
-  // 2. Fetch translations automatically using free endpoint
-  const aiCards = await Promise.all(
-    wordsToTranslate.map(async (word) => {
-      try {
-        const res = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=ne&dt=t&q=${encodeURIComponent(
-            word
-          )}`
-        );
-        const data = await res.json();
-        const translation = data[0][0][0];
+    try {
+      // 1. Generate/translate cards
+      const newCards = await importCardsBatch(inputText, chapterName);
 
-        return {
-          id: `${Date.now()}-${Math.random()}`,
-          term: word,
-          meaning: translation,
-          chapter: chapterName.trim() || 'General',
-        };
-      } catch (err) {
-        return {
-          id: `${Date.now()}-${Math.random()}`,
-          term: word,
-          meaning: 'Translation Error',
-          chapter: chapterName.trim() || 'General',
-        };
+      if (!newCards || newCards.length === 0) {
+        Alert.alert('Notice', 'No cards were created.');
+        return;
       }
-    })
-  );
 
-  return [...manualCards, ...aiCards];
-};
+      // 2. Pass imported cards to your main state handler if provided via route params
+      if (route?.params?.onImportCards) {
+        route.params.onImportCards(newCards);
+      }
+
+      Alert.alert(
+        'Success',
+        `Successfully imported ${newCards.length} flashcard(s)!`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setInputText('');
+              setChapterName('');
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Import Failed', error.message || 'An error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Bulk Import Flashcards</Text>
+      <Text style={styles.subtitle}>
+        Enter words line-by-line to automatically translate from Korean to Nepali.
+      </Text>
+
+      <Text style={styles.label}>CHAPTER / CATEGORY NAME</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g. Chapter 1, Food, Verbs..."
+        placeholderTextColor="#666"
+        value={chapterName}
+        onChangeText={setChapterName}
+      />
+
+      <Text style={styles.label}>WORDS (ONE PER LINE)</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        placeholder="사과&#10;바나나&#10;우유"
+        placeholderTextColor="#666"
+        multiline
+        numberOfLines={6}
+        value={inputText}
+        onChangeText={setInputText}
+      />
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleImport}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#FFF" />
+        ) : (
+          <Text style={styles.buttonText}>Import Words</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0F0F12',
+    padding: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6C63FF',
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: '#1C1C1E',
+    color: '#FFF',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2C2C2E',
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  button: {
+    backgroundColor: '#5856D6',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+});
             
