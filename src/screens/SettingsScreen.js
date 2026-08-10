@@ -1,34 +1,31 @@
-import React from 'react';
-import { StyleSheet, Text, View, Switch, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Switch, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import CustomModal from '../components/CustomModal';
 
 export default function SettingsScreen({ isDarkMode, setIsDarkMode, setCards }) {
-  const handleClearAllData = () => {
-    Alert.alert('Reset App Data', 'Are you sure you want to delete all saved flashcards?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete Everything', style: 'destructive', onPress: () => setCards([]) },
-    ]);
-  };
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const themeBg = isDarkMode ? '#0F172A' : '#F8FAFC';
-  const themeCard = isDarkMode ? '#1E293B' : '#FFF';
-  const themeText = isDarkMode ? '#F8FAFC' : '#1E293B';
+  const themeBg = isDarkMode ? '#000000' : '#F8FAFC';
+  const themeCard = isDarkMode ? '#121212' : '#FFF';
+  const themeText = isDarkMode ? '#FFFFFF' : '#1E293B';
+  const themeBorder = isDarkMode ? '#27272A' : '#E2E8F0';
 
   return (
     <View style={[styles.container, { backgroundColor: themeBg }]}>
       <Text style={[styles.headerTitle, { color: themeText }]}>⚙️ Settings</Text>
 
-      <View style={[styles.rowCard, { backgroundColor: themeCard, borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]}>
+      <View style={[styles.rowCard, { backgroundColor: themeCard, borderColor: themeBorder }]}>
         <View style={styles.rowLeft}>
           <Ionicons name={isDarkMode ? 'moon' : 'sunny-outline'} size={22} color={isDarkMode ? '#818CF8' : '#4F46E5'} />
-          <Text style={[styles.rowTxt, { color: themeText }]}>Dark Mode</Text>
+          <Text style={[styles.rowTxt, { color: themeText }]}>AMOLED Dark Mode</Text>
         </View>
         <Switch value={isDarkMode} onValueChange={setIsDarkMode} trackColor={{ false: '#CBD5E1', true: '#6366F1' }} />
       </View>
 
       <TouchableOpacity
-        style={[styles.rowCard, { backgroundColor: themeCard, borderColor: isDarkMode ? '#334155' : '#E2E8F0' }]}
-        onPress={handleClearAllData}
+        style={[styles.rowCard, { backgroundColor: themeCard, borderColor: themeBorder }]}
+        onPress={() => setModalVisible(true)}
       >
         <View style={styles.rowLeft}>
           <Ionicons name="trash-outline" size={22} color="#EF4444" />
@@ -37,9 +34,20 @@ export default function SettingsScreen({ isDarkMode, setIsDarkMode, setCards }) 
       </TouchableOpacity>
 
       <View style={styles.aboutBox}>
-        <Text style={styles.aboutTxt}>Flash Card v2.0</Text>
-        <Text style={styles.subAbout}>Nepali Translation Supported</Text>
+        <Text style={[styles.aboutTxt, isDarkMode && { color: '#71717A' }]}>Flash Card v2.0</Text>
+        <Text style={[styles.subAbout, isDarkMode && { color: '#52525B' }]}>Nepali Translation Supported</Text>
       </View>
+
+      <CustomModal
+        visible={modalVisible}
+        title="Clear All Flashcards?"
+        message="Are you sure you want to delete all saved flashcards from your phone?"
+        type="danger"
+        showCancel
+        isDarkMode={isDarkMode}
+        onClose={() => setModalVisible(false)}
+        onConfirm={() => setCards([])}
+      />
     </View>
   );
 }
@@ -54,4 +62,4 @@ const styles = StyleSheet.create({
   aboutTxt: { fontSize: 14, fontWeight: '700', color: '#94A3B8' },
   subAbout: { fontSize: 12, color: '#64748B', marginTop: 4 },
 });
-                 
+          
