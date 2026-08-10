@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
@@ -26,6 +26,12 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
   const [speakingText, setSpeakingText] = useState(null);
 
   const flipAnim = useRef(new Animated.Value(0)).current;
+
+  // RESET FLIP STATE WHENEVER CARD CHANGES
+  useEffect(() => {
+    setIsFlipped(false);
+    flipAnim.setValue(0);
+  }, [card?.id, safeIndex]);
 
   const exampleSentence = useMemo(() => {
     if (!card?.term) return null;
@@ -103,7 +109,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
           pointerEvents={isFlipped ? 'none' : 'auto'}
           style={[styles.card, themeCardFront, { opacity: frontOp, transform: [{ perspective: 1000 }, { rotateY: frontInt }] }]}
         >
-          {/* Header */}
           <View style={styles.cardHeaderBar}>
             <View style={[styles.badge, isDarkMode && { backgroundColor: '#27272A' }]}>
               <Text style={[styles.badgeTxt, isDarkMode && { color: '#818CF8' }]}>{card.chapter || 'General'}</Text>
@@ -120,7 +125,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             </TouchableOpacity>
           </View>
 
-          {/* Word & Pronounce Center Block */}
           <View style={styles.mainWordContainer}>
             <Text style={[styles.mainWordText, { color: themeTextPrimary }]}>{frontText}</Text>
             <TouchableOpacity
@@ -134,7 +138,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             </TouchableOpacity>
           </View>
 
-          {/* Empty Spacer to maintain identical height mapping with back */}
           <View style={styles.exampleSpacer} />
 
           <Text style={[styles.flipHint, isDarkMode && { color: '#71717A' }]}>Tap card to flip 🔄</Text>
@@ -145,7 +148,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
           pointerEvents={isFlipped ? 'auto' : 'none'}
           style={[styles.card, themeCardBack, { opacity: backOp, transform: [{ perspective: 1000 }, { rotateY: backInt }] }]}
         >
-          {/* Header */}
           <View style={styles.cardHeaderBar}>
             <Text style={[styles.meanTag, isDarkMode && { color: '#818CF8' }]}>{backTagText}</Text>
             <TouchableOpacity
@@ -159,7 +161,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             </TouchableOpacity>
           </View>
 
-          {/* Word & Pronounce Center Block (Matches Front Exactly) */}
           <View style={styles.mainWordContainer}>
             <Text style={[styles.mainWordText, { color: themeTextPrimary }]}>{backText}</Text>
             <TouchableOpacity
@@ -173,7 +174,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             </TouchableOpacity>
           </View>
 
-          {/* Example Sentence Box */}
           {exampleSentence ? (
             <View style={[styles.exampleContainer, isDarkMode ? styles.exampleBoxDark : styles.exampleBoxLight]}>
               <Text style={[styles.exampleHeader, isDarkMode && { color: '#818CF8' }]}>EXAMPLE SENTENCE</Text>
@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
   swapBtnActive: { backgroundColor: '#6366F1' },
   swapBtnTxt: { fontSize: 10, fontWeight: '700', color: '#6366F1' },
 
-  /* Unified Word & Pronounce Box */
   mainWordContainer: { width: '100%', alignItems: 'center', justifyContent: 'center', marginVertical: 10 },
   mainWordText: { fontSize: 32, fontWeight: '800', textAlign: 'center', marginBottom: 14 },
   spkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
@@ -222,7 +221,6 @@ const styles = StyleSheet.create({
   spkTxt: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 13 },
   spkTxtAct: { color: '#FFF' },
 
-  /* Example Sentence Section */
   exampleContainer: { width: '100%', padding: 12, borderRadius: 14, borderWidth: 1, height: 90, justifyContent: 'center' },
   exampleBoxLight: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
   exampleBoxDark: { backgroundColor: '#18181B', borderColor: '#27272A' },
@@ -233,4 +231,4 @@ const styles = StyleSheet.create({
 
   flipHint: { fontSize: 12, color: '#94A3B8' },
 });
-        
+    
