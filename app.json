@@ -5,6 +5,10 @@
     "version": "1.0.0",
     "owner": "ayushdhanuks-team",
     "orientation": "portrait",
+    "splash": {
+      "backgroundColor": "#FFFFFF",
+      "resizeMode": "contain"
+    },
     "android": {
       "package": "com.anonymous.flashcardv2",
       "adaptiveIcon": {
