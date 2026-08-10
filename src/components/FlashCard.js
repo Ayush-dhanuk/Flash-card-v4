@@ -5,7 +5,6 @@ import * as Speech from 'expo-speech';
 
 const { width, height } = Dimensions.get('window');
 
-// Short, simple, everyday sentences (3-4 words max)
 const SIMPLE_NATURAL_SENTENCES = {
   '의사': { ko: '저는 의사예요.', ne: 'म डाक्टर हुँ।' },
   '아버지': { ko: '아버지를 사랑해요.', ne: 'म बुबालाई माया गर्छु।' },
@@ -16,18 +15,19 @@ const SIMPLE_NATURAL_SENTENCES = {
   '물': { ko: '물을 마셔요.', ne: 'पानी पिउँछु।' },
   '집': { ko: '지금 집에 가요.', ne: 'अहिले घर जान्छु।' },
   '학교': { ko: '학교에 가요.', ne: 'स्कूल जान्छु।' },
-  '사과': { ko: '사과를 먹어요.', ne: 'स्याउ खान्छु।' },
+  '사과': { ko: '사과를 먹어요.', ne: 'स्या우 खान्छु।' },
   '친구': { ko: '친구를 만나요.', ne: 'साथीलाई भेट्छु।' },
   '음식': { ko: '음식이 맛있어요.', ne: 'खाना मीठो छ।' },
 };
 
-export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
+export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, initialReversed = false }) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isReversed, setIsReversed] = useState(initialReversed);
   const [speakingText, setSpeakingText] = useState(null);
 
   const flipAnim = useRef(new Animated.Value(0)).current;
 
-  // Select simple sentence or use a lightweight 3-word dynamic template
+  // Simple example sentence generator (Always attached to back)
   const exampleSentence = useMemo(() => {
     if (!card?.term) return null;
     const cleanTerm = card.term.trim();
@@ -36,7 +36,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
       return SIMPLE_NATURAL_SENTENCES[cleanTerm];
     }
 
-    // Ultra-simple dynamic fallback for custom imported words
     return {
       ko: `${cleanTerm}(이/가) 좋아요.`,
       ne: `${card.meaning || 'यो'} राम्रो छ।`,
@@ -51,6 +50,11 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
       useNativeDriver: true,
     }).start();
     setIsFlipped(!isFlipped);
+  };
+
+  const toggleReverseMode = (e) => {
+    e.stopPropagation();
+    setIsReversed((prev) => !prev);
   };
 
   const speakText = async (text) => {
@@ -84,6 +88,11 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
   const themeCardBack = isDarkMode ? styles.cardBackDark : styles.cardBackLight;
   const themeTextPrimary = isDarkMode ? '#FFFFFF' : '#0F172A';
 
+  // Dynamic content based on reverse mode setting
+  const frontText = isReversed ? card.meaning : card.term;
+  const backText = isReversed ? card.term : card.meaning;
+  const backTagText = isReversed ? 'KOREAN WORD' : 'NEPALI MEANING';
+
   return (
     <View style={styles.container}>
       <Text style={[styles.progTxt, isDarkMode && { color: '#A1A1AA' }]}>
@@ -96,19 +105,32 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
           pointerEvents={isFlipped ? 'none' : 'auto'}
           style={[styles.card, themeCardFront, { opacity: frontOp, transform: [{ perspective: 1000 }, { rotateY: frontInt }] }]}
         >
-          <View style={[styles.badge, isDarkMode && { backgroundColor: '#27272A' }]}>
-            <Text style={[styles.badgeTxt, isDarkMode && { color: '#818CF8' }]}>{card.chapter || 'General'}</Text>
+          {/* Header Bar */}
+          <View style={styles.cardHeaderBar}>
+            <View style={[styles.badge, isDarkMode && { backgroundColor: '#27272A' }]}>
+              <Text style={[styles.badgeTxt, isDarkMode && { color: '#818CF8' }]}>{card.chapter || 'General'}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.swapBtn, isDarkMode && { backgroundColor: '#27272A' }, isReversed && styles.swapBtnActive]}
+              onPress={toggleReverseMode}
+            >
+              <Ionicons name="swap-horizontal" size={14} color={isReversed ? '#FFF' : '#6366F1'} />
+              <Text style={[styles.swapBtnTxt, isReversed && { color: '#FFF' }]}>
+                {isReversed ? 'Nepali → Korean' : 'Korean → Nepali'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <Text style={[styles.cardTerm, { color: themeTextPrimary }]}>{card.term}</Text>
+          <Text style={[styles.cardTerm, { color: themeTextPrimary }]}>{frontText}</Text>
 
           <TouchableOpacity
-            style={[styles.spkBtn, isDarkMode && { backgroundColor: '#27272A' }, speakingText === card.term && styles.spkBtnAct]}
-            onPress={(e) => { e.stopPropagation(); speakText(card.term); }}
+            style={[styles.spkBtn, isDarkMode && { backgroundColor: '#27272A' }, speakingText === frontText && styles.spkBtnAct]}
+            onPress={(e) => { e.stopPropagation(); speakText(frontText); }}
           >
-            <Ionicons name={speakingText === card.term ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === card.term ? '#FFF' : '#6366F1'} />
-            <Text style={[styles.spkTxt, isDarkMode && { color: '#818CF8' }, speakingText === card.term && styles.spkTxtAct]}>
-              {speakingText === card.term ? 'Speaking...' : 'Pronounce'}
+            <Ionicons name={speakingText === frontText ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === frontText ? '#FFF' : '#6366F1'} />
+            <Text style={[styles.spkTxt, isDarkMode && { color: '#818CF8' }, speakingText === frontText && styles.spkTxtAct]}>
+              {speakingText === frontText ? 'Speaking...' : 'Pronounce'}
             </Text>
           </TouchableOpacity>
 
@@ -120,22 +142,36 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode }) {
           pointerEvents={isFlipped ? 'auto' : 'none'}
           style={[styles.card, themeCardBack, { opacity: backOp, transform: [{ perspective: 1000 }, { rotateY: backInt }] }]}
         >
+          {/* Top Section */}
           <View style={styles.topBackSection}>
-            <Text style={[styles.meanTag, isDarkMode && { color: '#818CF8' }]}>NEPALI MEANING</Text>
-            <Text style={[styles.cardMean, { color: themeTextPrimary }]}>{card.meaning}</Text>
+            <View style={styles.cardHeaderBar}>
+              <Text style={[styles.meanTag, isDarkMode && { color: '#818CF8' }]}>{backTagText}</Text>
+              
+              <TouchableOpacity
+                style={[styles.swapBtn, isDarkMode && { backgroundColor: '#27272A' }, isReversed && styles.swapBtnActive]}
+                onPress={toggleReverseMode}
+              >
+                <Ionicons name="swap-horizontal" size={14} color={isReversed ? '#FFF' : '#6366F1'} />
+                <Text style={[styles.swapBtnTxt, isReversed && { color: '#FFF' }]}>
+                  {isReversed ? 'Nepali → Korean' : 'Korean → Nepali'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.cardMean, { color: themeTextPrimary }]}>{backText}</Text>
 
             <TouchableOpacity
-              style={[styles.spkBtnBack, isDarkMode && { backgroundColor: '#27272A', borderColor: '#3F3F46' }, speakingText === card.meaning && styles.spkBtnBackAct]}
-              onPress={(e) => { e.stopPropagation(); speakText(card.meaning); }}
+              style={[styles.spkBtnBack, isDarkMode && { backgroundColor: '#27272A', borderColor: '#3F3F46' }, speakingText === backText && styles.spkBtnBackAct]}
+              onPress={(e) => { e.stopPropagation(); speakText(backText); }}
             >
-              <Ionicons name={speakingText === card.meaning ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === card.meaning ? '#FFF' : '#6366F1'} />
-              <Text style={[styles.spkTxtBack, isDarkMode && { color: '#818CF8' }, speakingText === card.meaning && styles.spkTxtBackAct]}>
-                {speakingText === card.meaning ? 'Speaking...' : 'Pronounce'}
+              <Ionicons name={speakingText === backText ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === backText ? '#FFF' : '#6366F1'} />
+              <Text style={[styles.spkTxtBack, isDarkMode && { color: '#818CF8' }, speakingText === backText && styles.spkTxtBackAct]}>
+                {speakingText === backText ? 'Speaking...' : 'Pronounce'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* SIMPLE EXAMPLE SENTENCE BOX */}
+          {/* EXAMPLE SENTENCE BOX (STAYS ALWAYS ON THE BACK) */}
           {exampleSentence && (
             <View style={[styles.exampleContainer, isDarkMode ? styles.exampleBoxDark : styles.exampleBoxLight]}>
               <Text style={[styles.exampleHeader, isDarkMode && { color: '#818CF8' }]}>EXAMPLE SENTENCE</Text>
@@ -159,33 +195,42 @@ const styles = StyleSheet.create({
   container: { alignItems: 'center', width: '100%' },
   progTxt: { fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 10 },
   cardWrap: { width: width * 0.88, height: Math.min(height * 0.54, 460), alignItems: 'center', justifyContent: 'center' },
-  card: { width: '100%', height: '100%', borderRadius: 22, padding: 20, alignItems: 'center', justifyContent: 'space-between', backfaceVisibility: 'hidden', position: 'absolute', elevation: 4 },
+  card: { width: '100%', height: '100%', borderRadius: 22, padding: 18, alignItems: 'center', justifyContent: 'space-between', backfaceVisibility: 'hidden', position: 'absolute', elevation: 4 },
   cardFrontLight: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEF2FF' },
   cardFrontDark: { backgroundColor: '#121212', borderWidth: 1, borderColor: '#27272A' },
   cardBackLight: { backgroundColor: '#F8FAFC', borderWidth: 1.5, borderColor: '#6366F1' },
   cardBackDark: { backgroundColor: '#121212', borderWidth: 1.5, borderColor: '#6366F1' },
-  badge: { position: 'absolute', top: 16, left: 16, backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
-  badgeTxt: { color: '#4F46E5', fontWeight: '700', fontSize: 12 },
-  cardTerm: { fontSize: 34, fontWeight: '800', textAlign: 'center', marginTop: 40 },
+
+  cardHeaderBar: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  badge: { backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  badgeTxt: { color: '#4F46E5', fontWeight: '700', fontSize: 11 },
+
+  swapBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, gap: 4 },
+  swapBtnActive: { backgroundColor: '#6366F1' },
+  swapBtnTxt: { fontSize: 10, fontWeight: '700', color: '#6366F1' },
+
+  cardTerm: { fontSize: 32, fontWeight: '800', textAlign: 'center', marginTop: 20 },
   topBackSection: { alignItems: 'center', width: '100%' },
-  cardMean: { fontSize: 28, fontWeight: '800', textAlign: 'center', marginTop: 8 },
-  meanTag: { fontSize: 11, fontWeight: '800', color: '#4F46E5', letterSpacing: 1.2, marginTop: 4 },
+  cardMean: { fontSize: 26, fontWeight: '800', textAlign: 'center', marginTop: 6 },
+  meanTag: { fontSize: 11, fontWeight: '800', color: '#4F46E5', letterSpacing: 1 },
+
   spkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
   spkBtnAct: { backgroundColor: '#4F46E5' },
   spkTxt: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 13 },
   spkTxtAct: { color: '#FFF' },
-  spkBtnBack: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, borderWidth: 1, borderColor: '#C7D2FE', marginTop: 10 },
+
+  spkBtnBack: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: '#C7D2FE', marginTop: 8 },
   spkBtnBackAct: { backgroundColor: '#4F46E5' },
   spkTxtBack: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 12 },
   spkTxtBackAct: { color: '#FFF' },
 
-  exampleContainer: { width: '100%', padding: 14, borderRadius: 14, borderWidth: 1, marginVertical: 8 },
+  exampleContainer: { width: '100%', padding: 12, borderRadius: 14, borderWidth: 1, marginVertical: 6 },
   exampleBoxLight: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
   exampleBoxDark: { backgroundColor: '#18181B', borderColor: '#27272A' },
-  exampleHeader: { fontSize: 10, fontWeight: '800', color: '#4F46E5', letterSpacing: 1, marginBottom: 6 },
-  exampleLine: { fontSize: 15, lineHeight: 22 },
+  exampleHeader: { fontSize: 10, fontWeight: '800', color: '#4F46E5', letterSpacing: 1, marginBottom: 4 },
+  exampleLine: { fontSize: 14, lineHeight: 20 },
   boldTag: { fontWeight: '700', color: '#6366F1' },
 
   flipHint: { fontSize: 12, color: '#94A3B8' },
 });
-    
+      
