@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import FlashCard from '../components/FlashCard';
 
-export default function StudyScreen({ cards }) {
+export default function StudyScreen({ cards, isDarkMode }) {
   const [selectedChapter, setSelectedChapter] = useState('All');
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -21,9 +21,12 @@ export default function StudyScreen({ cards }) {
     setCurrentIndex(safeIndex <= 0 ? filteredCards.length - 1 : safeIndex - 1);
   };
 
+  const themeBg = isDarkMode ? '#0F172A' : '#F8FAFC';
+  const themeText = isDarkMode ? '#F8FAFC' : '#1E293B';
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerTitle}>⚡ FlashCards AI</Text>
+    <View style={[styles.container, { backgroundColor: themeBg }]}>
+      <Text style={[styles.headerTitle, { color: themeText }]}>⚡ Flash Card</Text>
       
       {/* Chapter Selection Bar */}
       <View style={styles.chapBar}>
@@ -47,9 +50,8 @@ export default function StudyScreen({ cards }) {
         </View>
       ) : (
         <View style={styles.studyArea}>
-          <FlashCard key={currentCard.id} card={currentCard} safeIndex={safeIndex} totalCards={filteredCards.length} />
+          <FlashCard key={currentCard.id} card={currentCard} safeIndex={safeIndex} totalCards={filteredCards.length} isDarkMode={isDarkMode} />
           
-          {/* Navigation Controls */}
           <View style={styles.actRow}>
             <TouchableOpacity style={[styles.navActionBtn, styles.prevBtn]} onPress={handlePrev}>
               <Ionicons name="chevron-back" size={20} color="#475569" />
@@ -68,8 +70,8 @@ export default function StudyScreen({ cards }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC', padding: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#1E293B', textAlign: 'center', marginBottom: 12 },
+  container: { flex: 1, padding: 16 },
+  headerTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 12 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   chapBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, height: 38 },
   chapPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#E2E8F0', marginRight: 8 },
@@ -85,4 +87,4 @@ const styles = StyleSheet.create({
   prevTxt: { color: '#475569', fontWeight: '700', marginLeft: 4, fontSize: 14 },
   nextTxt: { color: '#FFF', fontWeight: '700', marginRight: 4, fontSize: 14 },
 });
-  
+        
