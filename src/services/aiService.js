@@ -1,4 +1,7 @@
-const GEMINI_API_KEY = 'AQ.Ab8RN6KgSFiOHSsjC6fvPw2t_DI-1MNlu8U0FFHVfFd95G7JHA';
+const GEMINI_API_KEY = 'AQ.Ab8RN6L9Wvdf2bcbdk7AAjhrMgDy1YfFFUunh5kXwzlUar281A';
+
+// Passing the key directly in the URL, as Google expects for API keys
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 export const importCardsBatch = async (inputText, chapterName = 'General') => {
   if (!inputText || !inputText.trim()) {
@@ -32,27 +35,12 @@ ${wordsToTranslate.join('\n')}
 
 Return a JSON array where each object has keys "term" (Korean word) and "meaning" (Nepali translation).`;
 
-  // Detect token type (OAuth 'AQ.' vs Standard API Key 'AIzaSy...')
-  const isOAuthToken = GEMINI_API_KEY.startsWith('AQ.');
-
-  const API_URL = isOAuthToken
-    ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
-    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-
-  if (isOAuthToken) {
-    headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
-  } else {
-    headers['x-goog-api-key'] = GEMINI_API_KEY;
-  }
-
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json' // Removed the broken Authorization header
+      },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -88,4 +76,4 @@ Return a JSON array where each object has keys "term" (Korean word) and "meaning
     throw error;
   }
 };
-    
+      
