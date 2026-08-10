@@ -11,20 +11,20 @@ import SettingsScreen from '../screens/SettingsScreen';
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs({ cards, setCards }) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF',
-          borderTopColor: isDarkMode ? '#334155' : '#E2E8F0',
+          backgroundColor: isDarkMode ? '#000000' : '#FFFFFF',
+          borderTopColor: isDarkMode ? '#18181B' : '#E2E8F0',
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: '#4F46E5',
-        tabBarInactiveTintColor: isDarkMode ? '#94A3B8' : '#64748B',
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: isDarkMode ? '#71717A' : '#64748B',
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'Study') iconName = 'book-outline';
@@ -53,4 +53,5 @@ export default function BottomTabs({ cards, setCards }) {
       </Tab.Screen>
     </Tab.Navigator>
   );
-}
+      }
+      
