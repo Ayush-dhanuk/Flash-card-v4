@@ -1,8 +1,5 @@
 const GEMINI_API_KEY = 'AQ.Ab8RN6KgSFiOHSsjC6fvPw2t_DI-1MNlu8U0FFHVfFd95G7JHA';
 
-// Updated model endpoint
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 export const importCardsBatch = async (inputText, chapterName = 'General') => {
   if (!inputText || !inputText.trim()) {
     throw new Error('Please enter some text to import.');
@@ -12,7 +9,6 @@ export const importCardsBatch = async (inputText, chapterName = 'General') => {
   const wordsToTranslate = [];
   const manualCards = [];
 
-  // Separate pre-paired entries (e.g., "사과, स्याउ") from words needing translation
   lines.forEach((line) => {
     const parts = line.split(/[,,\t=]/).map((p) => p.trim());
     if (parts.length >= 2 && parts[1]) {
@@ -36,10 +32,27 @@ ${wordsToTranslate.join('\n')}
 
 Return a JSON array where each object has keys "term" (Korean word) and "meaning" (Nepali translation).`;
 
+  // Detect token type (OAuth 'AQ.' vs Standard API Key 'AIzaSy...')
+  const isOAuthToken = GEMINI_API_KEY.startsWith('AQ.');
+
+  const API_URL = isOAuthToken
+    ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (isOAuthToken) {
+    headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
+  } else {
+    headers['x-goog-api-key'] = GEMINI_API_KEY;
+  }
+
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
