@@ -1,6 +1,5 @@
-// Replace with your actual Gemini API Key from https://aistudio.google.com/
-const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${'AQ.Ab8RN6LlOtEHe3Gdvt4LgCn10KmKSTr5YcrRIg95sq9KrsV0oA'}`;
+const GEMINI_API_KEY = 'AQ.Ab8RN6KgSFiOHSsjC6fvPw2t_DI-1MNlu8U0FFHVfFd95G7JHA';
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 export const importCardsBatch = async (inputText, chapterName = 'General') => {
   if (!inputText || !inputText.trim()) {
@@ -11,6 +10,7 @@ export const importCardsBatch = async (inputText, chapterName = 'General') => {
   const wordsToTranslate = [];
   const manualCards = [];
 
+  // Separate pre-paired entries (e.g., "사과, स्याउ") from words needing translation
   lines.forEach((line) => {
     const parts = line.split(/[,,\t=]/).map((p) => p.trim());
     if (parts.length >= 2 && parts[1]) {
@@ -29,12 +29,10 @@ export const importCardsBatch = async (inputText, chapterName = 'General') => {
     return manualCards;
   }
 
-  const prompt = `You are a Korean-to-Nepali translator. Translate the following list of Korean words to Nepali. 
-Return ONLY a valid JSON array of objects with keys "term" (the Korean word) and "meaning" (the Nepali translation). 
-Do NOT wrap in markdown or extra formatting.
+  const prompt = `Translate the following Korean words to Nepali:
+${wordsToTranslate.join('\n')}
 
-Words:
-${JSON.stringify(wordsToTranslate)}`;
+Return a JSON array where each object has keys "term" (Korean word) and "meaning" (Nepali translation).`;
 
   try {
     const response = await fetch(API_URL, {
@@ -42,24 +40,25 @@ ${JSON.stringify(wordsToTranslate)}`;
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
       }),
     });
 
-    if (!response.ok) {
-      const errorResponse = await response.text();
-      console.error('API Error details:', errorResponse);
-      throw new Error(`API returned status ${response.status}. Check key or limits.`);
-    }
-
     const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!rawText) {
-      throw new Error('Empty response from AI.');
+    if (!response.ok) {
+      console.log('Google Error Response:', JSON.stringify(data, null, 2));
+      throw new Error(data?.error?.message || `HTTP ${response.status}`);
     }
 
-    const cleanJsonText = rawText.replace(/```json|```/gi, '').trim();
-    const translatedList = JSON.parse(cleanJsonText);
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      throw new Error('Received an empty response from AI.');
+    }
+
+    const translatedList = JSON.parse(rawText);
 
     const aiCards = translatedList.map((item) => ({
       id: `${Date.now()}-${Math.random()}`,
@@ -71,7 +70,7 @@ ${JSON.stringify(wordsToTranslate)}`;
     return [...manualCards, ...aiCards];
   } catch (error) {
     console.error('Batch import failed:', error);
-    throw new Error(error.message || 'Failed to translate words.');
+    throw error;
   }
 };
-                   
+  
