@@ -7,15 +7,18 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  Keyboard,
 } from 'react-native';
 import { importCardsBatch } from '../services/aiService';
+import { saveNewCards } from '../utils/storage';
 
-export default function ImportScreen({ navigation, route }) {
+export default function ImportScreen() {
   const [inputText, setInputText] = useState('');
   const [chapterName, setChapterName] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleImport = async () => {
+    Keyboard.dismiss();
     if (!inputText.trim()) {
       Alert.alert('Error', 'Please enter some words to import.');
       return;
@@ -24,20 +27,20 @@ export default function ImportScreen({ navigation, route }) {
     setLoading(true);
 
     try {
-      const newCards = await importCardsBatch(inputText, chapterName);
+      // 1. Fetch translations
+      const generatedCards = await importCardsBatch(inputText, chapterName);
 
-      if (!newCards || newCards.length === 0) {
+      if (!generatedCards || generatedCards.length === 0) {
         Alert.alert('Notice', 'No cards were created.');
         return;
       }
 
-      if (route?.params?.onImportCards) {
-        route.params.onImportCards(newCards);
-      }
+      // 2. SAVE TO ASYNCSTORAGE
+      await saveNewCards(generatedCards);
 
       Alert.alert(
         'Success',
-        `Successfully imported ${newCards.length} flashcard(s)!`,
+        `Successfully imported ${generatedCards.length} flashcard(s)!`,
         [
           {
             text: 'OK',
@@ -146,4 +149,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-      
+          
