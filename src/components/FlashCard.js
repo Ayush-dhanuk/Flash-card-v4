@@ -27,7 +27,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
 
   const flipAnim = useRef(new Animated.Value(0)).current;
 
-  // Simple example sentence generator (Always attached to back)
   const exampleSentence = useMemo(() => {
     if (!card?.term) return null;
     const cleanTerm = card.term.trim();
@@ -88,7 +87,6 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
   const themeCardBack = isDarkMode ? styles.cardBackDark : styles.cardBackLight;
   const themeTextPrimary = isDarkMode ? '#FFFFFF' : '#0F172A';
 
-  // Dynamic content based on reverse mode setting
   const frontText = isReversed ? card.meaning : card.term;
   const backText = isReversed ? card.term : card.meaning;
   const backTagText = isReversed ? 'KOREAN WORD' : 'NEPALI MEANING';
@@ -105,7 +103,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
           pointerEvents={isFlipped ? 'none' : 'auto'}
           style={[styles.card, themeCardFront, { opacity: frontOp, transform: [{ perspective: 1000 }, { rotateY: frontInt }] }]}
         >
-          {/* Header Bar */}
+          {/* Header */}
           <View style={styles.cardHeaderBar}>
             <View style={[styles.badge, isDarkMode && { backgroundColor: '#27272A' }]}>
               <Text style={[styles.badgeTxt, isDarkMode && { color: '#818CF8' }]}>{card.chapter || 'General'}</Text>
@@ -122,17 +120,22 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.cardTerm, { color: themeTextPrimary }]}>{frontText}</Text>
+          {/* Word & Pronounce Center Block */}
+          <View style={styles.mainWordContainer}>
+            <Text style={[styles.mainWordText, { color: themeTextPrimary }]}>{frontText}</Text>
+            <TouchableOpacity
+              style={[styles.spkBtn, isDarkMode && { backgroundColor: '#27272A' }, speakingText === frontText && styles.spkBtnAct]}
+              onPress={(e) => { e.stopPropagation(); speakText(frontText); }}
+            >
+              <Ionicons name={speakingText === frontText ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === frontText ? '#FFF' : '#6366F1'} />
+              <Text style={[styles.spkTxt, isDarkMode && { color: '#818CF8' }, speakingText === frontText && styles.spkTxtAct]}>
+                {speakingText === frontText ? 'Speaking...' : 'Pronounce'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.spkBtn, isDarkMode && { backgroundColor: '#27272A' }, speakingText === frontText && styles.spkBtnAct]}
-            onPress={(e) => { e.stopPropagation(); speakText(frontText); }}
-          >
-            <Ionicons name={speakingText === frontText ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === frontText ? '#FFF' : '#6366F1'} />
-            <Text style={[styles.spkTxt, isDarkMode && { color: '#818CF8' }, speakingText === frontText && styles.spkTxtAct]}>
-              {speakingText === frontText ? 'Speaking...' : 'Pronounce'}
-            </Text>
-          </TouchableOpacity>
+          {/* Empty Spacer to maintain identical height mapping with back */}
+          <View style={styles.exampleSpacer} />
 
           <Text style={[styles.flipHint, isDarkMode && { color: '#71717A' }]}>Tap card to flip 🔄</Text>
         </Animated.View>
@@ -142,46 +145,47 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
           pointerEvents={isFlipped ? 'auto' : 'none'}
           style={[styles.card, themeCardBack, { opacity: backOp, transform: [{ perspective: 1000 }, { rotateY: backInt }] }]}
         >
-          {/* Top Section */}
-          <View style={styles.topBackSection}>
-            <View style={styles.cardHeaderBar}>
-              <Text style={[styles.meanTag, isDarkMode && { color: '#818CF8' }]}>{backTagText}</Text>
-              
-              <TouchableOpacity
-                style={[styles.swapBtn, isDarkMode && { backgroundColor: '#27272A' }, isReversed && styles.swapBtnActive]}
-                onPress={toggleReverseMode}
-              >
-                <Ionicons name="swap-horizontal" size={14} color={isReversed ? '#FFF' : '#6366F1'} />
-                <Text style={[styles.swapBtnTxt, isReversed && { color: '#FFF' }]}>
-                  {isReversed ? 'Nepali → Korean' : 'Korean → Nepali'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={[styles.cardMean, { color: themeTextPrimary }]}>{backText}</Text>
-
+          {/* Header */}
+          <View style={styles.cardHeaderBar}>
+            <Text style={[styles.meanTag, isDarkMode && { color: '#818CF8' }]}>{backTagText}</Text>
             <TouchableOpacity
-              style={[styles.spkBtnBack, isDarkMode && { backgroundColor: '#27272A', borderColor: '#3F3F46' }, speakingText === backText && styles.spkBtnBackAct]}
+              style={[styles.swapBtn, isDarkMode && { backgroundColor: '#27272A' }, isReversed && styles.swapBtnActive]}
+              onPress={toggleReverseMode}
+            >
+              <Ionicons name="swap-horizontal" size={14} color={isReversed ? '#FFF' : '#6366F1'} />
+              <Text style={[styles.swapBtnTxt, isReversed && { color: '#FFF' }]}>
+                {isReversed ? 'Nepali → Korean' : 'Korean → Nepali'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Word & Pronounce Center Block (Matches Front Exactly) */}
+          <View style={styles.mainWordContainer}>
+            <Text style={[styles.mainWordText, { color: themeTextPrimary }]}>{backText}</Text>
+            <TouchableOpacity
+              style={[styles.spkBtn, isDarkMode && { backgroundColor: '#27272A' }, speakingText === backText && styles.spkBtnAct]}
               onPress={(e) => { e.stopPropagation(); speakText(backText); }}
             >
               <Ionicons name={speakingText === backText ? 'volume-high' : 'volume-medium-outline'} size={18} color={speakingText === backText ? '#FFF' : '#6366F1'} />
-              <Text style={[styles.spkTxtBack, isDarkMode && { color: '#818CF8' }, speakingText === backText && styles.spkTxtBackAct]}>
+              <Text style={[styles.spkTxt, isDarkMode && { color: '#818CF8' }, speakingText === backText && styles.spkTxtAct]}>
                 {speakingText === backText ? 'Speaking...' : 'Pronounce'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* EXAMPLE SENTENCE BOX (STAYS ALWAYS ON THE BACK) */}
-          {exampleSentence && (
+          {/* Example Sentence Box */}
+          {exampleSentence ? (
             <View style={[styles.exampleContainer, isDarkMode ? styles.exampleBoxDark : styles.exampleBoxLight]}>
               <Text style={[styles.exampleHeader, isDarkMode && { color: '#818CF8' }]}>EXAMPLE SENTENCE</Text>
               <Text style={[styles.exampleLine, { color: themeTextPrimary }]}>
                 <Text style={styles.boldTag}>Korean: </Text>{exampleSentence.ko}
               </Text>
-              <Text style={[styles.exampleLine, { color: themeTextPrimary, marginTop: 4 }]}>
+              <Text style={[styles.exampleLine, { color: themeTextPrimary, marginTop: 2 }]}>
                 <Text style={styles.boldTag}>Nepali: </Text>{exampleSentence.ne}
               </Text>
             </View>
+          ) : (
+            <View style={styles.exampleSpacer} />
           )}
 
           <Text style={[styles.flipHint, isDarkMode && { color: '#71717A' }]}>Tap card to flip 🔄</Text>
@@ -201,36 +205,32 @@ const styles = StyleSheet.create({
   cardBackLight: { backgroundColor: '#F8FAFC', borderWidth: 1.5, borderColor: '#6366F1' },
   cardBackDark: { backgroundColor: '#121212', borderWidth: 1.5, borderColor: '#6366F1' },
 
-  cardHeaderBar: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardHeaderBar: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 28 },
   badge: { backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   badgeTxt: { color: '#4F46E5', fontWeight: '700', fontSize: 11 },
+  meanTag: { fontSize: 11, fontWeight: '800', color: '#4F46E5', letterSpacing: 1 },
 
   swapBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, gap: 4 },
   swapBtnActive: { backgroundColor: '#6366F1' },
   swapBtnTxt: { fontSize: 10, fontWeight: '700', color: '#6366F1' },
 
-  cardTerm: { fontSize: 32, fontWeight: '800', textAlign: 'center', marginTop: 20 },
-  topBackSection: { alignItems: 'center', width: '100%' },
-  cardMean: { fontSize: 26, fontWeight: '800', textAlign: 'center', marginTop: 6 },
-  meanTag: { fontSize: 11, fontWeight: '800', color: '#4F46E5', letterSpacing: 1 },
-
-  spkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  /* Unified Word & Pronounce Box */
+  mainWordContainer: { width: '100%', alignItems: 'center', justifyContent: 'center', marginVertical: 10 },
+  mainWordText: { fontSize: 32, fontWeight: '800', textAlign: 'center', marginBottom: 14 },
+  spkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
   spkBtnAct: { backgroundColor: '#4F46E5' },
   spkTxt: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 13 },
   spkTxtAct: { color: '#FFF' },
 
-  spkBtnBack: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: '#C7D2FE', marginTop: 8 },
-  spkBtnBackAct: { backgroundColor: '#4F46E5' },
-  spkTxtBack: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 12 },
-  spkTxtBackAct: { color: '#FFF' },
-
-  exampleContainer: { width: '100%', padding: 12, borderRadius: 14, borderWidth: 1, marginVertical: 6 },
+  /* Example Sentence Section */
+  exampleContainer: { width: '100%', padding: 12, borderRadius: 14, borderWidth: 1, height: 90, justifyContent: 'center' },
   exampleBoxLight: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
   exampleBoxDark: { backgroundColor: '#18181B', borderColor: '#27272A' },
   exampleHeader: { fontSize: 10, fontWeight: '800', color: '#4F46E5', letterSpacing: 1, marginBottom: 4 },
-  exampleLine: { fontSize: 14, lineHeight: 20 },
+  exampleLine: { fontSize: 13, lineHeight: 18 },
   boldTag: { fontWeight: '700', color: '#6366F1' },
+  exampleSpacer: { height: 90 },
 
   flipHint: { fontSize: 12, color: '#94A3B8' },
 });
-      
+        
