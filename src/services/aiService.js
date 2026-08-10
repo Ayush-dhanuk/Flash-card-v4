@@ -1,7 +1,4 @@
-const GEMINI_API_KEY = 'AQ.Ab8RN6L9Wvdf2bcbdk7AAjhrMgDy1YfFFUunh5kXwzlUar281A';
-
-// Passing the key directly in the URL, as Google expects for API keys
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// src/services/aiService.js - Free translation backup (No API Key Required)
 
 export const importCardsBatch = async (inputText, chapterName = 'General') => {
   if (!inputText || !inputText.trim()) {
@@ -12,6 +9,7 @@ export const importCardsBatch = async (inputText, chapterName = 'General') => {
   const wordsToTranslate = [];
   const manualCards = [];
 
+  // 1. Separate manual pairs (e.g. "사과, स्याउ") from single words
   lines.forEach((line) => {
     const parts = line.split(/[,,\t=]/).map((p) => p.trim());
     if (parts.length >= 2 && parts[1]) {
@@ -30,50 +28,35 @@ export const importCardsBatch = async (inputText, chapterName = 'General') => {
     return manualCards;
   }
 
-  const prompt = `Translate the following Korean words to Nepali:
-${wordsToTranslate.join('\n')}
+  // 2. Fetch translations automatically using free endpoint
+  const aiCards = await Promise.all(
+    wordsToTranslate.map(async (word) => {
+      try {
+        const res = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=ne&dt=t&q=${encodeURIComponent(
+            word
+          )}`
+        );
+        const data = await res.json();
+        const translation = data[0][0][0];
 
-Return a JSON array where each object has keys "term" (Korean word) and "meaning" (Nepali translation).`;
+        return {
+          id: `${Date.now()}-${Math.random()}`,
+          term: word,
+          meaning: translation,
+          chapter: chapterName.trim() || 'General',
+        };
+      } catch (err) {
+        return {
+          id: `${Date.now()}-${Math.random()}`,
+          term: word,
+          meaning: 'Translation Error',
+          chapter: chapterName.trim() || 'General',
+        };
+      }
+    })
+  );
 
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json' // Removed the broken Authorization header
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.log('Google Error Response:', JSON.stringify(data, null, 2));
-      throw new Error(data?.error?.message || `HTTP ${response.status}`);
-    }
-
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) {
-      throw new Error('Received an empty response from AI.');
-    }
-
-    const translatedList = JSON.parse(rawText);
-
-    const aiCards = translatedList.map((item) => ({
-      id: `${Date.now()}-${Math.random()}`,
-      term: item.term,
-      meaning: item.meaning,
-      chapter: chapterName.trim() || 'General',
-    }));
-
-    return [...manualCards, ...aiCards];
-  } catch (error) {
-    console.error('Batch import failed:', error);
-    throw error;
-  }
+  return [...manualCards, ...aiCards];
 };
-      
+            
