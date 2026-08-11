@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function QuizScreen({ cards, isDarkMode }) {
+export default function QuizScreen({ cards, isDarkMode, textSize, isShuffled }) {
   const [selectedChapter, setSelectedChapter] = useState('All');
   const [currentCard, setCurrentCard] = useState(null);
   const [options, setOptions] = useState([]);
@@ -14,7 +14,16 @@ export default function QuizScreen({ cards, isDarkMode }) {
 
   useEffect(() => {
     generateNewQuestion();
-  }, [selectedChapter, cards]);
+  }, [selectedChapter, cards, isShuffled]);
+
+  const getFontSize = () => {
+    switch (textSize) {
+      case 'Small': return 22;
+      case 'Large': return 38;
+      case 'Medium':
+      default: return 30;
+    }
+  };
 
   const generateNewQuestion = () => {
     setSelectedOption(null);
@@ -28,7 +37,6 @@ export default function QuizScreen({ cards, isDarkMode }) {
     const targetCard = filteredCards[randomIndex];
     setCurrentCard(targetCard);
 
-    // Shuffle options
     const otherCards = cards.filter((c) => c.id !== targetCard.id);
     const shuffledOthers = [...otherCards].sort(() => 0.5 - Math.random()).slice(0, 3);
     const allOptions = [...shuffledOthers, targetCard].sort(() => 0.5 - Math.random());
@@ -56,7 +64,6 @@ export default function QuizScreen({ cards, isDarkMode }) {
     <View style={[styles.container, { backgroundColor: themeBg }]}>
       <Text style={[styles.title, { color: themeText }]}>🎯 Quiz Mode</Text>
 
-      {/* Chapter Selection Bar */}
       <View style={styles.chapBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {chapterList.map((ch) => (
@@ -73,7 +80,6 @@ export default function QuizScreen({ cards, isDarkMode }) {
         </ScrollView>
       </View>
 
-      {/* Score Box */}
       <View style={[styles.scoreCard, { backgroundColor: themeCard, borderColor: themeBorder }]}>
         <Text style={[styles.scoreTxt, { color: themeText }]}>
           Score: <Text style={{ color: '#6366F1' }}>{score.correct}</Text> / {score.total}
@@ -83,11 +89,10 @@ export default function QuizScreen({ cards, isDarkMode }) {
         </TouchableOpacity>
       </View>
 
-      {/* Quiz Area */}
       {currentCard ? (
         <View style={[styles.questionCard, { backgroundColor: themeCard, borderColor: themeBorder }]}>
           <Text style={styles.qHeader}>WHAT IS THE MEANING OF:</Text>
-          <Text style={[styles.qTerm, { color: themeText }]}>{currentCard.term}</Text>
+          <Text style={[styles.qTerm, { color: themeText, fontSize: getFontSize() }]}>{currentCard.term}</Text>
 
           <View style={styles.optionsWrap}>
             {options.map((option) => {
@@ -141,7 +146,7 @@ const styles = StyleSheet.create({
   resetTxt: { color: '#EF4444', fontWeight: '700', fontSize: 13 },
   questionCard: { width: '100%', padding: 20, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
   qHeader: { fontSize: 11, fontWeight: '800', color: '#6366F1', letterSpacing: 1, marginBottom: 10 },
-  qTerm: { fontSize: 32, fontWeight: '800', textAlign: 'center', marginBottom: 20 },
+  qTerm: { fontWeight: '800', textAlign: 'center', marginBottom: 20 },
   optionsWrap: { width: '100%', gap: 10 },
   optionBtn: { width: '100%', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, alignItems: 'center' },
   optionTxt: { fontSize: 18, fontWeight: '700' },
