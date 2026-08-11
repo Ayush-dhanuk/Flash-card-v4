@@ -76,4 +76,4 @@ const styles = StyleSheet.create({
   cardFooter: { alignItems: 'center' },
   chapterBadge: { fontSize: 12, fontWeight: '500' },
 });
-        
+          
