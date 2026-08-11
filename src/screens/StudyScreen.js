@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FlashCard from '../components/FlashCard';
 
-export default function StudyScreen({ cards, isDarkMode }) {
+export default function StudyScreen({ cards, isDarkMode, textSize, isShuffled }) {
   const [selectedChapter, setSelectedChapter] = useState('All');
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const chapterList = ['All', ...Array.from(new Set(cards.map((c) => c.chapter || 'General')))];
-  const filteredCards = cards.filter((c) => selectedChapter === 'All' || (c.chapter || 'General') === selectedChapter);
+
+  // Shuffle and Filter Logic
+  const filteredCards = useMemo(() => {
+    let list = cards.filter((c) => selectedChapter === 'All' || (c.chapter || 'General') === selectedChapter);
+    if (isShuffled) {
+      list = [...list].sort(() => Math.random() - 0.5);
+    }
+    return list;
+  }, [cards, selectedChapter, isShuffled]);
 
   const safeIndex = Math.min(currentIndex, Math.max(0, filteredCards.length - 1));
   const currentCard = filteredCards[safeIndex];
@@ -26,10 +34,8 @@ export default function StudyScreen({ cards, isDarkMode }) {
 
   return (
     <View style={[styles.container, { backgroundColor: themeBg }]}>
-      {/* Header */}
       <Text style={[styles.title, { color: themeText }]}>⚡ Flash Card</Text>
 
-      {/* Chapter Selection Bar */}
       <View style={styles.chapBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {chapterList.map((ch) => (
@@ -49,12 +55,16 @@ export default function StudyScreen({ cards, isDarkMode }) {
         </ScrollView>
       </View>
 
-      {/* Main FlashCard Area */}
       {filteredCards.length > 0 && currentCard ? (
         <View style={styles.cardArea}>
-          <FlashCard card={currentCard} safeIndex={safeIndex} totalCards={filteredCards.length} isDarkMode={isDarkMode} />
+          <FlashCard 
+            card={currentCard} 
+            safeIndex={safeIndex} 
+            totalCards={filteredCards.length} 
+            isDarkMode={isDarkMode} 
+            textSize={textSize}
+          />
 
-          {/* Navigation Controls */}
           <View style={styles.btnRow}>
             <TouchableOpacity
               style={[styles.navBtn, safeIndex === 0 && styles.disabledBtn, isDarkMode && { backgroundColor: '#27272A' }]}
@@ -103,4 +113,4 @@ const styles = StyleSheet.create({
   emptyBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyTxt: { fontSize: 16, fontWeight: '600' },
 });
-      
+        
