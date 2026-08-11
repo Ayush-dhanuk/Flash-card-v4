@@ -5,14 +5,17 @@
     "version": "1.0.0",
     "owner": "ayushdhanuks-team",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#FFFFFF",
-      "resizeMode": "contain"
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F0F12"
     },
     "android": {
       "package": "com.anonymous.flashcardv2",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0F0F12"
       }
     },
     "extra": {
