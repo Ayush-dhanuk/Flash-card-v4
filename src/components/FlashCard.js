@@ -6,18 +6,18 @@ import * as Speech from 'expo-speech';
 const { width, height } = Dimensions.get('window');
 
 const SIMPLE_NATURAL_SENTENCES = {
-  '의사': { ko: '저는 의사예요.', ne: 'म डाक्टर हुँ।' },
-  '아버지': { ko: '아버지를 사랑해요.', ne: 'म बुबालाई माया गर्छु।' },
-  '안녕하세요': { ko: '안녕하세요, 반가워요.', ne: 'नमस्ते, भेटेर खुसी लाग्यो।' },
-  '감사합니다': { ko: '정말 감사합니다.', ne: 'धेरै धेरै धन्यवाद।' },
-  '나무': { ko: '나무가 매우 커요.', ne: 'रुख धेरै ठूलो छ।' },
-  '책': { ko: '책을 읽어요.', ne: 'किताब पढ्छु।' },
-  '물': { ko: '물을 마셔요.', ne: 'पानी पिउँछु।' },
-  '집': { ko: '지금 집에 가요.', ne: 'अहिले घर जान्छु।' },
-  '학교': { ko: '학교에 가요.', ne: 'स्कूल जान्छु।' },
-  '사과': { ko: '사과를 먹어요.', ne: 'स्या우 खान्छु।' },
-  '친구': { ko: '친구를 만나요.', ne: 'साथीलाई भेट्छु।' },
-  '음식': { ko: '음식이 맛있어요.', ne: 'खाना मीठो छ।' },
+  '의사': { ko: '저는 의사예요.', ne: 'म डाक्टर हुँ।', en: 'I am a doctor.' },
+  '아버지': { ko: '아버지를 사랑해요.', ne: 'म बुबालाई माया गर्छु।', en: 'I love my father.' },
+  '안녕하세요': { ko: '안녕하세요, 반가워요.', ne: 'नमस्ते, भेटेर खुसी लाग्यो।', en: 'Hello, nice to meet you.' },
+  '감사합니다': { ko: '정말 감사합니다.', ne: 'धेरै धेरै धन्यवाद।', en: 'Thank you very much.' },
+  '나무': { ko: '나무가 매우 커요.', ne: 'रुख धेरै ठूलो छ।', en: 'The tree is very big.' },
+  '책': { ko: '책을 읽어요.', ne: 'किताब पढ्छु।', en: 'I read a book.' },
+  '물': { ko: '물을 마셔요.', ne: 'पानी पिउँछु।', en: 'I drink water.' },
+  '집': { ko: '지금 집에 가요.', ne: 'अहिले घर जान्छु।', en: 'I am going home now.' },
+  '학교': { ko: '학교에 가요.', ne: 'स्कूल जान्छु।', en: 'I go to school.' },
+  '사과': { ko: '사과를 먹어요.', ne: 'स्या우 खान्छु।', en: 'I eat an apple.' },
+  '친구': { ko: '친구를 만나요.', ne: 'साथीलाई भेट्छु।', en: 'I meet a friend.' },
+  '음식': { ko: '음식이 맛있어요.', ne: 'खाना मीठो छ।', en: 'The food is delicious.' },
 };
 
 export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, initialReversed = false }) {
@@ -44,6 +44,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
     return {
       ko: `${cleanTerm}(이/가) 좋아요.`,
       ne: `${card.meaning || 'यो'} राम्रो छ।`,
+      en: `I like ${cleanTerm.toLowerCase()}.`,
     };
   }, [card]);
 
@@ -95,7 +96,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
 
   const frontText = isReversed ? card.meaning : card.term;
   const backText = isReversed ? card.term : card.meaning;
-  const backTagText = isReversed ? 'KOREAN WORD' : 'NEPALI MEANING';
+  const backTagText = isReversed ? 'KOREAN WORD' : 'MEANING';
 
   return (
     <View style={styles.container}>
@@ -120,7 +121,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             >
               <Ionicons name="swap-horizontal" size={14} color={isReversed ? '#FFF' : '#6366F1'} />
               <Text style={[styles.swapBtnTxt, isReversed && { color: '#FFF' }]}>
-                {isReversed ? 'Nepali → Korean' : 'Korean → Nepali'}
+                {isReversed ? 'Meaning → Korean' : 'Korean → Meaning'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -156,7 +157,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
             >
               <Ionicons name="swap-horizontal" size={14} color={isReversed ? '#FFF' : '#6366F1'} />
               <Text style={[styles.swapBtnTxt, isReversed && { color: '#FFF' }]}>
-                {isReversed ? 'Nepali → Korean' : 'Korean → Nepali'}
+                {isReversed ? 'Meaning → Korean' : 'Korean → Meaning'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -176,12 +177,15 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
 
           {exampleSentence ? (
             <View style={[styles.exampleContainer, isDarkMode ? styles.exampleBoxDark : styles.exampleBoxLight]}>
-              <Text style={[styles.exampleHeader, isDarkMode && { color: '#818CF8' }]}>EXAMPLE SENTENCE</Text>
-              <Text style={[styles.exampleLine, { color: themeTextPrimary }]}>
+              <Text style={[styles.exampleHeader, isDarkMode && { color: '#818CF8' }]}>EXAMPLE SENTENCES</Text>
+              <Text style={[styles.exampleLine, { color: themeTextPrimary }]} numberOfLines={1}>
                 <Text style={styles.boldTag}>Korean: </Text>{exampleSentence.ko}
               </Text>
-              <Text style={[styles.exampleLine, { color: themeTextPrimary, marginTop: 2 }]}>
+              <Text style={[styles.exampleLine, { color: themeTextPrimary, marginTop: 1 }]} numberOfLines={1}>
                 <Text style={styles.boldTag}>Nepali: </Text>{exampleSentence.ne}
+              </Text>
+              <Text style={[styles.exampleLine, { color: themeTextPrimary, marginTop: 1 }]} numberOfLines={1}>
+                <Text style={styles.boldTag}>English: </Text>{exampleSentence.en}
               </Text>
             </View>
           ) : (
@@ -198,7 +202,7 @@ export default function FlashCard({ card, safeIndex, totalCards, isDarkMode, ini
 const styles = StyleSheet.create({
   container: { alignItems: 'center', width: '100%' },
   progTxt: { fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 10 },
-  cardWrap: { width: width * 0.88, height: Math.min(height * 0.54, 460), alignItems: 'center', justifyContent: 'center' },
+  cardWrap: { width: width * 0.88, height: Math.min(height * 0.58, 490), alignItems: 'center', justifyContent: 'center' },
   card: { width: '100%', height: '100%', borderRadius: 22, padding: 18, alignItems: 'center', justifyContent: 'space-between', backfaceVisibility: 'hidden', position: 'absolute', elevation: 4 },
   cardFrontLight: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEF2FF' },
   cardFrontDark: { backgroundColor: '#121212', borderWidth: 1, borderColor: '#27272A' },
@@ -214,21 +218,21 @@ const styles = StyleSheet.create({
   swapBtnActive: { backgroundColor: '#6366F1' },
   swapBtnTxt: { fontSize: 10, fontWeight: '700', color: '#6366F1' },
 
-  mainWordContainer: { width: '100%', alignItems: 'center', justifyContent: 'center', marginVertical: 10 },
-  mainWordText: { fontSize: 32, fontWeight: '800', textAlign: 'center', marginBottom: 14 },
-  spkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
+  mainWordContainer: { width: '100%', alignItems: 'center', justifyContent: 'center', marginVertical: 4 },
+  mainWordText: { fontSize: 30, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
+  spkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   spkBtnAct: { backgroundColor: '#4F46E5' },
-  spkTxt: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 13 },
+  spkTxt: { marginLeft: 6, color: '#4F46E5', fontWeight: '700', fontSize: 12 },
   spkTxtAct: { color: '#FFF' },
 
-  exampleContainer: { width: '100%', padding: 12, borderRadius: 14, borderWidth: 1, height: 90, justifyContent: 'center' },
+  exampleContainer: { width: '100%', padding: 10, borderRadius: 14, borderWidth: 1, height: 102, justifyContent: 'center' },
   exampleBoxLight: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
   exampleBoxDark: { backgroundColor: '#18181B', borderColor: '#27272A' },
-  exampleHeader: { fontSize: 10, fontWeight: '800', color: '#4F46E5', letterSpacing: 1, marginBottom: 4 },
-  exampleLine: { fontSize: 13, lineHeight: 18 },
+  exampleHeader: { fontSize: 9, fontWeight: '800', color: '#4F46E5', letterSpacing: 1, marginBottom: 2 },
+  exampleLine: { fontSize: 12, lineHeight: 16 },
   boldTag: { fontWeight: '700', color: '#6366F1' },
-  exampleSpacer: { height: 90 },
+  exampleSpacer: { height: 102 },
 
   flipHint: { fontSize: 12, color: '#94A3B8' },
 });
-    
+  
