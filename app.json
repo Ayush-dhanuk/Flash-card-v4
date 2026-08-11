@@ -6,8 +6,6 @@
     "owner": "ayushdhanuks-team",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    
-    },
     "android": {
       "package": "com.anonymous.flashcardv2",
       "adaptiveIcon": {
