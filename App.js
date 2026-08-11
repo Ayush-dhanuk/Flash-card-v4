@@ -15,6 +15,11 @@ export default function App() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Global Settings State
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [textSize, setTextSize] = useState('Medium');
+  const [isShuffled, setIsShuffled] = useState(false);
+
   useEffect(() => {
     loadCards();
   }, []);
@@ -39,17 +44,31 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: isDarkMode ? '#000000' : '#FFFFFF' }]}>
         <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
   }
 
+  const themeBg = isDarkMode ? '#000000' : '#FFFFFF';
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeBg }]}>
+      <StatusBar 
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+        backgroundColor={themeBg} 
+      />
       <NavigationContainer>
-        <BottomTabs cards={cards} setCards={saveCards} />
+        <BottomTabs 
+          cards={cards} 
+          setCards={saveCards} 
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          textSize={textSize}
+          setTextSize={setTextSize}
+          isShuffled={isShuffled}
+          setIsShuffled={setIsShuffled}
+        />
       </NavigationContainer>
     </SafeAreaView>
   );
@@ -58,7 +77,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   center: {
@@ -67,4 +85,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-
+      
