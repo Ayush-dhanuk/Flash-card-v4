@@ -6,10 +6,7 @@
     "owner": "ayushdhanuks-team",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F0F12"
+    
     },
     "android": {
       "package": "com.anonymous.flashcardv2",
