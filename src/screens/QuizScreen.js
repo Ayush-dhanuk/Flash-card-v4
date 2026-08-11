@@ -1,161 +1,172 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function QuizScreen({ cards, isDarkMode, textSize, isShuffled }) {
-  const [selectedChapter, setSelectedChapter] = useState('All');
-  const [currentCard, setCurrentCard] = useState(null);
+export default function QuizScreen({ cards, isDarkMode, isShuffled }) {
+  const [quizList, setQuizList] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [score, setScore] = useState({ correct: 0, total: 0 });
-
-  const chapterList = ['All', ...Array.from(new Set(cards.map((c) => c.chapter || 'General')))];
-  const filteredCards = cards.filter((c) => selectedChapter === 'All' || (c.chapter || 'General') === selectedChapter);
+  const [score, setScore] = useState(0);
+  const [isFinished, setIsFinished] = useState(false);
 
   useEffect(() => {
-    generateNewQuestion();
-  }, [selectedChapter, cards, isShuffled]);
+    initQuiz();
+  }, [cards, isShuffled]);
 
-  const getFontSize = () => {
-    switch (textSize) {
-      case 'Small': return 22;
-      case 'Large': return 38;
-      case 'Medium':
-      default: return 30;
-    }
-  };
-
-  const generateNewQuestion = () => {
-    setSelectedOption(null);
-    if (filteredCards.length === 0) {
-      setCurrentCard(null);
-      setOptions([]);
+  const initQuiz = () => {
+    if (!cards || cards.length < 2) {
+      setQuizList([]);
       return;
     }
-
-    const randomIndex = Math.floor(Math.random() * filteredCards.length);
-    const targetCard = filteredCards[randomIndex];
-    setCurrentCard(targetCard);
-
-    const otherCards = cards.filter((c) => c.id !== targetCard.id);
-    const shuffledOthers = [...otherCards].sort(() => 0.5 - Math.random()).slice(0, 3);
-    const allOptions = [...shuffledOthers, targetCard].sort(() => 0.5 - Math.random());
-
-    setOptions(allOptions);
+    let list = [...cards];
+    if (isShuffled) {
+      list.sort(() => Math.random() - 0.5);
+    }
+    setQuizList(list);
+    setCurrentIndex(0);
+    setScore(0);
+    setIsFinished(false);
+    loadQuestion(list, 0);
   };
 
-  const handleSelectOption = (option) => {
-    if (selectedOption) return;
-    setSelectedOption(option);
+  const loadQuestion = (list, index) => {
+    if (!list[index]) return;
+    const current = list[index];
+    const correctMeaning = current.meaning || current.back;
 
-    const isCorrect = option.id === currentCard.id;
-    setScore((prev) => ({
-      correct: isCorrect ? prev.correct + 1 : prev.correct,
-      total: prev.total + 1,
-    }));
+    // Grab 3 random incorrect choices
+    const incorrects = cards
+      .filter(c => (c.meaning || c.back) !== correctMeaning)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map(c => c.meaning || c.back);
+
+    const allOpts = [...incorrects, correctMeaning].sort(() => Math.random() - 0.5);
+    setOptions(allOpts);
+    setSelectedOption(null);
+  };
+
+  const handleSelect = (opt) => {
+    if (selectedOption !== null) return; // already answered
+    setSelectedOption(opt);
+
+    const current = quizList[currentIndex];
+    const correctMeaning = current.meaning || current.back;
+
+    if (opt === correctMeaning) {
+      setScore(score + 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < quizList.length - 1) {
+      const nextIdx = currentIndex + 1;
+      setCurrentIndex(nextIdx);
+      loadQuestion(quizList, nextIdx);
+    } else {
+      setIsFinished(true);
+    }
   };
 
   const themeBg = isDarkMode ? '#000000' : '#F8FAFC';
-  const themeCard = isDarkMode ? '#121212' : '#FFF';
-  const themeText = isDarkMode ? '#FFFFFF' : '#0F172A';
-  const themeBorder = isDarkMode ? '#27272A' : '#E2E8F0';
+  const cardBg = isDarkMode ? '#121212' : '#FFFFFF';
+  const textCol = isDarkMode ? '#FFFFFF' : '#1E293B';
+  const subCol = isDarkMode ? '#A1A1AA' : '#64748B';
+  const borderCol = isDarkMode ? '#27272A' : '#E2E8F0';
+
+  if (!cards || cards.length < 2) {
+    return (
+      <View style={[styles.centered, { backgroundColor: themeBg }]}>
+        <Ionicons name="school-outline" size={48} color={subCol} />
+        <Text style={[styles.warnTxt, { color: textCol }]}>Add at least 2 cards to take a quiz.</Text>
+      </View>
+    );
+  }
+
+  if (isFinished) {
+    return (
+      <View style={[styles.centered, { backgroundColor: themeBg }]}>
+        <Ionicons name="trophy" size={64} color="#F59E0B" />
+        <Text style={[styles.finishTitle, { color: textCol }]}>Quiz Complete!</Text>
+        <Text style={[styles.scoreTxt, { color: subCol }]}>You scored {score} out of {quizList.length}</Text>
+        <TouchableOpacity style={styles.restartBtn} onPress={initQuiz}>
+          <Text style={styles.restartTxt}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const current = quizList[currentIndex];
+  const correctMeaning = current ? (current.meaning || current.back) : '';
 
   return (
     <View style={[styles.container, { backgroundColor: themeBg }]}>
-      <Text style={[styles.title, { color: themeText }]}>🎯 Quiz Mode</Text>
+      <View style={styles.topRow}>
+        <Text style={[styles.progressTxt, { color: subCol }]}>Question {currentIndex + 1} of {quizList.length}</Text>
+        <Text style={[styles.scoreBadge, { color: '#4F46E5' }]}>Score: {score}</Text>
+      </View>
 
-      <View style={styles.chapBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {chapterList.map((ch) => (
+      <View style={[styles.questionCard, { backgroundColor: cardBg, borderColor: borderCol }]}>
+        <Text style={[styles.questionLabel, { color: subCol }]}>What is the meaning of:</Text>
+        <Text style={[styles.questionTerm, { color: textCol }]}>{current ? (current.term || current.front) : ''}</Text>
+      </View>
+
+      <View style={styles.optionsWrap}>
+        {options.map((opt, idx) => {
+          let btnStyle = { backgroundColor: cardBg, borderColor: borderCol };
+          let txtStyle = { color: textCol };
+
+          if (selectedOption !== null) {
+            if (opt === correctMeaning) {
+              btnStyle = { backgroundColor: '#DCFCE7', borderColor: '#22C55E' };
+              txtStyle = { color: '#15803D', fontWeight: '700' };
+            } else if (opt === selectedOption) {
+              btnStyle = { backgroundColor: '#FEE2E2', borderColor: '#EF4444' };
+              txtStyle = { color: '#B91C1C', fontWeight: '700' };
+            }
+          }
+
+          return (
             <TouchableOpacity
-              key={ch}
-              style={[styles.chapPill, isDarkMode && { backgroundColor: '#27272A' }, selectedChapter === ch && styles.activeChapPill]}
-              onPress={() => setSelectedChapter(ch)}
+              key={idx}
+              style={[styles.optionBtn, btnStyle, idx > 0 && { marginTop: 10 }]}
+              onPress={() => handleSelect(opt)}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.chapPillTxt, isDarkMode && { color: '#A1A1AA' }, selectedChapter === ch && styles.activeChapPillTxt]}>
-                {ch}
-              </Text>
+              <Text style={[styles.optionTxt, txtStyle]}>{opt}</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          );
+        })}
       </View>
 
-      <View style={[styles.scoreCard, { backgroundColor: themeCard, borderColor: themeBorder }]}>
-        <Text style={[styles.scoreTxt, { color: themeText }]}>
-          Score: <Text style={{ color: '#6366F1' }}>{score.correct}</Text> / {score.total}
-        </Text>
-        <TouchableOpacity onPress={() => setScore({ correct: 0, total: 0 })}>
-          <Text style={styles.resetTxt}>Reset Score</Text>
+      {selectedOption !== null && (
+        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+          <Text style={styles.nextBtnTxt}>Next Question</Text>
         </TouchableOpacity>
-      </View>
-
-      {currentCard ? (
-        <View style={[styles.questionCard, { backgroundColor: themeCard, borderColor: themeBorder }]}>
-          <Text style={styles.qHeader}>WHAT IS THE MEANING OF:</Text>
-          <Text style={[styles.qTerm, { color: themeText, fontSize: getFontSize() }]}>{currentCard.term}</Text>
-
-          <View style={styles.optionsWrap}>
-            {options.map((option) => {
-              let btnStyle = [styles.optionBtn, { backgroundColor: isDarkMode ? '#18181B' : '#F1F5F9', borderColor: themeBorder }];
-              let textStyle = [styles.optionTxt, { color: themeText }];
-
-              if (selectedOption) {
-                if (option.id === currentCard.id) {
-                  btnStyle = [styles.optionBtn, styles.correctBtn];
-                  textStyle = [styles.optionTxt, styles.whiteTxt];
-                } else if (selectedOption.id === option.id) {
-                  btnStyle = [styles.optionBtn, styles.wrongBtn];
-                  textStyle = [styles.optionTxt, styles.whiteTxt];
-                }
-              }
-
-              return (
-                <TouchableOpacity key={option.id} style={btnStyle} onPress={() => handleSelectOption(option)}>
-                  <Text style={textStyle}>{option.meaning}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {selectedOption && (
-            <TouchableOpacity style={styles.nextQuizBtn} onPress={generateNewQuestion}>
-              <Text style={styles.nextQuizTxt}>Next Question</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFF" />
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : (
-        <View style={styles.emptyBox}>
-          <Text style={[styles.emptyTxt, { color: themeText }]}>Add cards to start the quiz!</Text>
-        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', marginTop: 10, marginBottom: 12 },
-  chapBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, height: 38 },
-  chapPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#E2E8F0', marginRight: 8 },
-  activeChapPill: { backgroundColor: '#4F46E5' },
-  chapPillTxt: { fontSize: 13, fontWeight: '600', color: '#475569' },
-  activeChapPillTxt: { color: '#FFF' },
-  scoreCard: { width: '100%', padding: 14, borderRadius: 14, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  scoreTxt: { fontSize: 16, fontWeight: '700' },
-  resetTxt: { color: '#EF4444', fontWeight: '700', fontSize: 13 },
-  questionCard: { width: '100%', padding: 20, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
-  qHeader: { fontSize: 11, fontWeight: '800', color: '#6366F1', letterSpacing: 1, marginBottom: 10 },
-  qTerm: { fontWeight: '800', textAlign: 'center', marginBottom: 20 },
-  optionsWrap: { width: '100%', gap: 10 },
+  container: { flex: 1, padding: 16 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  progressTxt: { fontSize: 14, fontWeight: '600' },
+  scoreBadge: { fontSize: 14, fontWeight: '700' },
+  questionCard: { padding: 24, borderRadius: 20, borderWidth: 1, alignItems: 'center', marginBottom: 20, elevation: 2 },
+  questionLabel: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
+  questionTerm: { fontSize: 26, fontWeight: '800', textAlign: 'center' },
+  optionsWrap: { width: '100%', marginBottom: 20 },
   optionBtn: { width: '100%', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, alignItems: 'center' },
-  optionTxt: { fontSize: 18, fontWeight: '700' },
-  correctBtn: { backgroundColor: '#10B981', borderColor: '#10B981' },
-  wrongBtn: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
-  whiteTxt: { color: '#FFFFFF' },
-  nextQuizBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#4F46E5', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, marginTop: 20 },
-  nextQuizTxt: { color: '#FFF', fontWeight: '700', fontSize: 15, marginRight: 6 },
-  emptyBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyTxt: { fontSize: 16, fontWeight: '600' },
+  optionTxt: { fontSize: 16, fontWeight: '600' },
+  nextBtn: { backgroundColor: '#4F46E5', paddingVertical: 14, borderRadius: 14, alignItems: 'center', marginTop: 'auto' },
+  nextBtnTxt: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  warnTxt: { fontSize: 16, fontWeight: '600', marginTop: 10 },
+  finishTitle: { fontSize: 24, fontWeight: '800', marginTop: 12 },
+  scoreTxt: { fontSize: 14, marginTop: 4, marginBottom: 20 },
+  restartBtn: { backgroundColor: '#4F46E5', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  restartTxt: { color: '#FFF', fontWeight: '700', fontSize: 14 },
 });
-                
+      
