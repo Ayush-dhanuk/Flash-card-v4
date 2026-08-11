@@ -54,12 +54,13 @@ export default function SettingsScreen({
           <Text style={[styles.rowTxt, { color: themeText }]}>Flashcard Text Size</Text>
         </View>
         <View style={styles.sizeSelectorRow}>
-          {fontSizes.map((size) => (
+          {fontSizes.map((size, index) => (
             <TouchableOpacity
               key={size}
               style={[
                 styles.sizeBtn,
                 { backgroundColor: themeInput, borderColor: themeBorder },
+                index > 0 && { marginLeft: 8 },
                 textSize === size && styles.sizeBtnActive,
               ]}
               onPress={() => setTextSize(size)}
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
   rowLeft: { flexDirection: 'row', alignItems: 'center' },
   rowTxt: { fontSize: 16, fontWeight: '600', marginLeft: 12 },
   subRowTxt: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  sizeSelectorRow: { flexDirection: 'row', marginTop: 12, gap: 8 },
+  sizeSelectorRow: { flexDirection: 'row', marginTop: 12 },
   sizeBtn: { flex: 1, paddingVertical: 8, borderWidth: 1, borderRadius: 10, alignItems: 'center' },
   sizeBtnActive: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
   sizeBtnTxt: { fontSize: 13, fontWeight: '600' },
@@ -123,4 +124,4 @@ const styles = StyleSheet.create({
   aboutTxt: { fontSize: 14, fontWeight: '700', color: '#94A3B8' },
   subAbout: { fontSize: 12, color: '#64748B', marginTop: 4 },
 });
-    
+  
