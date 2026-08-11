@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Animated } from 'react-native';
 
 import StudyScreen from '../screens/StudyScreen';
 import QuizScreen from '../screens/QuizScreen';
@@ -17,6 +18,7 @@ export default function BottomTabs({ cards, setCards }) {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        lazy: true,
         tabBarStyle: {
           backgroundColor: isDarkMode ? '#000000' : '#FFFFFF',
           borderTopColor: isDarkMode ? '#18181B' : '#E2E8F0',
@@ -25,6 +27,18 @@ export default function BottomTabs({ cards, setCards }) {
         },
         tabBarActiveTintColor: '#6366F1',
         tabBarInactiveTintColor: isDarkMode ? '#71717A' : '#64748B',
+        // Adds smooth fade and scale transition animation when switching tabs
+        sceneContainerStyle: {
+          backgroundColor: isDarkMode ? '#000000' : '#FFFFFF',
+        },
+        tabBarAnimationEnabled: true,
+        animation: 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: {
+            duration: 150,
+          },
+        },
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'Study') iconName = 'book-outline';
@@ -53,5 +67,5 @@ export default function BottomTabs({ cards, setCards }) {
       </Tab.Screen>
     </Tab.Navigator>
   );
-      }
-      
+            }
+          
