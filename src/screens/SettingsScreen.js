@@ -124,4 +124,4 @@ const styles = StyleSheet.create({
   aboutTxt: { fontSize: 14, fontWeight: '700', color: '#94A3B8' },
   subAbout: { fontSize: 12, color: '#64748B', marginTop: 4 },
 });
-  
+        
