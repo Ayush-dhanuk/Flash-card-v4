@@ -1,71 +1,78 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function AddScreen({ onAddCard, isDarkMode, setActiveTab }) {
-  const [term, setTerm] = useState('');
-  const [meaning, setMeaning] = useState('');
+export default function AddScreen({ navigation }) {
+  const [bulkInput, setBulkInput] = useState('');
   const [chapter, setChapter] = useState('');
 
-  const handleSave = () => {
-    if (!term.trim() || !meaning.trim()) return;
-    onAddCard({
-      term: term.trim(),
-      meaning: meaning.trim(),
-      chapter: chapter.trim() || 'General',
-    });
-    setTerm('');
-    setMeaning('');
-    setChapter('');
-    setActiveTab('Home');
+  const handleBulkSave = async () => {
+    if (!bulkInput.trim()) {
+      Alert.alert('Error', 'Please enter flashcard data.');
+      return;
+    }
+
+    try {
+      const lines = bulkInput.split('\n');
+      const newCards = lines.map((line, index) => {
+        const parts = line.split(/[-–:]/); // Split by dash, en-dash, or colon
+        if (parts.length >= 2) {
+          return {
+            id: Date.now().toString() + index,
+            term: parts[0].trim(),
+            meaning: parts.slice(1).join(' ').trim(),
+            chapter: chapter.trim() || 'General',
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (newCards.length === 0) {
+        Alert.alert('Format Error', 'Use format: Term - Meaning (one per line)');
+        return;
+      }
+
+      const existingData = await AsyncStorage.getItem('@flashcards_v2_data');
+      const currentCards = existingData ? JSON.parse(existingData) : [];
+      const updatedCards = [...currentCards, ...newCards];
+
+      await AsyncStorage.setItem('@flashcards_v2_data', JSON.stringify(updatedCards));
+      
+      setBulkInput('');
+      setChapter('');
+      Alert.alert('Success', `${newCards.length} flashcards added automatically!`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save flashcards.');
+    }
   };
 
-  const themeBg = isDarkMode ? '#000000' : '#F8FAFC';
-  const cardBg = isDarkMode ? '#121212' : '#FFFFFF';
-  const textCol = isDarkMode ? '#FFFFFF' : '#1E293B';
-  const subCol = isDarkMode ? '#A1A1AA' : '#64748B';
-  const borderCol = isDarkMode ? '#27272A' : '#E2E8F0';
-  const inputBg = isDarkMode ? '#18181B' : '#F1F5F9';
-
   return (
-    <ScrollView style={[styles.container, { backgroundColor: themeBg }]} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={[styles.headerTitle, { color: textCol }]}>➕ Add New Flashcard</Text>
-
-      <View style={[styles.formCard, { backgroundColor: cardBg, borderColor: borderCol }]}>
-        <Text style={[styles.label, { color: textCol }]}>Vocabulary / Term *</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.headerTitle}>➕ Bulk Add Flashcards</Text>
+      
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Chapter / Category (Optional)</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBg, borderColor: borderCol, color: textCol }]}
-          placeholder="e.g. 안녕하세요"
-          placeholderTextColor={subCol}
-          value={term}
-          onChangeText={setTerm}
-        />
-
-        <Text style={[styles.label, { color: textCol }]}>Meaning / Definition *</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: inputBg, borderColor: borderCol, color: textCol }]}
-          placeholder="e.g. Hello"
-          placeholderTextColor={subCol}
-          value={meaning}
-          onChangeText={setMeaning}
-        />
-
-        <Text style={[styles.label, { color: textCol }]}>Chapter / Category (Optional)</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: inputBg, borderColor: borderCol, color: textCol }]}
+          style={styles.input}
           placeholder="e.g. Greetings"
-          placeholderTextColor={subCol}
+          placeholderTextColor="#666"
           value={chapter}
           onChangeText={setChapter}
         />
 
-        <TouchableOpacity 
-          style={[styles.saveBtn, (!term.trim() || !meaning.trim()) && { opacity: 0.5 }]} 
-          onPress={handleSave}
-          disabled={!term.trim() || !meaning.trim()}
-        >
-          <Ionicons name="checkmark-circle-outline" size={20} color="#FFF" />
-          <Text style={styles.saveBtnTxt}>Save Flashcard</Text>
+        <Text style={styles.label}>Cards List (Format: Term - Meaning, one per line)</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="안녕하세요 - Hello&#10;감사합니다 - Thank you"
+          placeholderTextColor="#666"
+          multiline
+          numberOfLines={6}
+          value={bulkInput}
+          onChangeText={setBulkInput}
+        />
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleBulkSave}>
+          <Text style={styles.saveButtonText}>Save All Flashcards</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -73,12 +80,13 @@ export default function AddScreen({ onAddCard, isDarkMode, setActiveTab }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 20 },
-  formCard: { padding: 20, borderRadius: 20, borderWidth: 1, elevation: 2 },
-  label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 12 },
-  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, height: 48, fontSize: 14 },
-  saveBtn: { flexDirection: 'row', backgroundColor: '#4F46E5', height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 24 },
-  saveBtnTxt: { color: '#FFF', fontSize: 15, fontWeight: '700', marginLeft: 8 },
+  container: { flex: 1, backgroundColor: '#121212', padding: 20 },
+  headerTitle: { fontSize: 22, color: '#fff', fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  inputContainer: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 12 },
+  label: { color: '#ccc', marginBottom: 5, fontSize: 14 },
+  input: { backgroundColor: '#2a2a2a', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 15 },
+  textArea: { height: 120, textAlignVertical: 'top' },
+  saveButton: { backgroundColor: '#6366f1', padding: 15, borderRadius: 8, alignItems: 'center' },
+  saveButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });
     
