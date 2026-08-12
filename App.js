@@ -8,7 +8,7 @@ import StudyScreen from './src/screens/StudyScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import AddScreen from './src/screens/AddScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import BottomTabs from './src/components/BottomTabs';
+import BottomTabs from './src/navigation/BottomTabs';
 
 const STORAGE_KEY = '@flashcards_v2_data';
 
